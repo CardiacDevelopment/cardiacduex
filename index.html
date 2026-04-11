@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BruceDeux</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f7f6f3;
+    --bg3: #efede9;
+    --text: #1a1a1a;
+    --text2: #6b6b6b;
+    --text3: #aaaaaa;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --green: #1D9E75;
+    --green-dark: #0F6E56;
+    --green-light: #E1F5EE;
+    --orange: #D85A30;
+    --orange-light: #FAECE7;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1e;
+      --bg2: #2a2a2a;
+      --bg3: #333333;
+      --text: #f0f0f0;
+      --text2: #aaaaaa;
+      --text3: #666666;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --green-light: #0a2e21;
+      --orange-light: #2e1409;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg3);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* Setup screen */
+  #setupScreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  .setup-card {
+    background: var(--bg);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+    padding: 2.5rem;
+    max-width: 460px;
+    width: 100%;
+  }
+  .setup-card h1 { font-size: 22px; font-weight: 500; margin-bottom: 6px; }
+  .setup-card p { font-size: 14px; color: var(--text2); margin-bottom: 1.5rem; line-height: 1.6; }
+  .setup-card label { font-size: 13px; font-weight: 500; display: block; margin-bottom: 6px; }
+  .setup-card input {
+    width: 100%; padding: 9px 12px; font-size: 14px;
+    border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+    background: var(--bg); color: var(--text); margin-bottom: 1rem;
+    font-family: monospace;
+  }
+  .setup-card input:focus { outline: none; border-color: var(--green); }
+  .setup-card .hint { font-size: 12px; color: var(--text3); margin-top: -8px; margin-bottom: 1rem; }
+  .setup-card .hint a { color: var(--green); text-decoration: none; }
+  .btn-primary {
+    width: 100%; padding: 10px; background: var(--green); color: #fff;
+    border: none; border-radius: var(--radius-sm); font-size: 14px;
+    font-weight: 500; cursor: pointer;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+
+  /* App screen */
+  #appScreen { display: none; max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+  .top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.25rem; flex-wrap: wrap; gap: 10px;
+  }
+  .app-title { font-size: 18px; font-weight: 500; letter-spacing: -0.02em; }
+  .app-title span { color: var(--green); }
+
+  .week-nav { display: flex; align-items: center; gap: 8px; }
+  .nav-btn {
+    background: none; border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 5px 11px;
+    cursor: pointer; font-size: 13px; color: var(--text);
+  }
+  .nav-btn:hover { background: var(--bg2); }
+  .week-label { font-size: 13px; color: var(--text2); min-width: 130px; text-align: center; }
+
+  .right-actions { display: flex; align-items: center; gap: 8px; }
+  .sync-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 6px 14px;
+    cursor: pointer; font-size: 13px; color: var(--text);
+  }
+  .sync-btn:hover { background: var(--bg2); }
+  .sync-btn:disabled { opacity: 0.5; pointer-events: none; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .pending-badge {
+    display: none; background: var(--orange); color: #fff;
+    border-radius: 10px; font-size: 10px; padding: 1px 6px;
+    font-weight: 500;
+  }
+  .settings-btn {
+    background: none; border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 6px 10px;
+    cursor: pointer; font-size: 13px; color: var(--text2);
+  }
+  .settings-btn:hover { background: var(--bg2); }
+
+  .overdue-bar {
+    display: none; background: var(--orange-light);
+    border: 0.5px solid #F0997B; border-radius: var(--radius-sm);
+    padding: 7px 14px; margin-bottom: 10px;
+    font-size: 12px; color: #993C1D;
+  }
+
+  /* Columns */
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 1.25rem;
+  }
+
+  @media (max-width: 700px) {
+    .columns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .columns .col:nth-child(n+4) { display: none; }
+  }
+
+  .col {
+    background: var(--bg); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 10px 8px; min-height: 130px;
+  }
+  .col.today { border-color: var(--green); border-width: 1.5px; }
+  .col-head { border-bottom: 0.5px solid var(--border); padding-bottom: 7px; margin-bottom: 8px; }
+  .day-name { font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+  .day-num { font-size: 18px; font-weight: 500; line-height: 1.2; }
+  .col.today .day-num { color: var(--green-dark); }
+
+  .task-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 4px; }
+  .task-row {
+    display: flex; align-items: flex-start; gap: 5px;
+    padding: 3px 2px; border-radius: 4px; cursor: default;
+  }
+  .task-row:hover { background: var(--bg2); }
+  .cat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+  .check {
+    width: 13px; height: 13px; border-radius: 3px;
+    border: 1.5px solid var(--border2); flex-shrink: 0;
+    margin-top: 1px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .check.done { background: var(--green); border-color: var(--green); }
+  .check.done::after {
+    content: ''; display: block; width: 7px; height: 4px;
+    border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff;
+    transform: rotate(-45deg) translateY(-1px);
+  }
+  .check.pushing { background: var(--orange); border-color: var(--orange); animation: pulse 0.7s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .task-label { font-size: 11px; line-height: 1.45; color: var(--text); flex: 1; word-break: break-word; }
+  .task-label.done { text-decoration: line-through; color: var(--text3); }
+  .n-badge { font-size: 9px; padding: 1px 4px; border-radius: 3px; background: var(--bg2); color: var(--text3); flex-shrink: 0; margin-top: 1px; }
+  .add-row {
+    width: 100%; background: none; border: none; text-align: left;
+    font-size: 11px; color: var(--text3); cursor: pointer;
+    padding: 3px 2px; border-radius: 4px;
+  }
+  .add-row:hover { background: var(--bg2); color: var(--text2); }
+
+  /* Inline add input */
+  .inline-input {
+    width: 100%; background: none; border: none; border-bottom: 1px solid var(--green);
+    font-size: 11px; color: var(--text); padding: 2px 0; outline: none;
+    font-family: inherit;
+  }
+
+  /* Someday */
+  .someday {
+    background: var(--bg); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px;
+  }
+  .someday-head {
+    font-size: 10px; font-weight: 500; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
+  }
+  .someday-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; min-height: 10px; }
+  .chip {
+    font-size: 12px; padding: 4px 12px;
+    border: 0.5px solid var(--border2); border-radius: 20px;
+    cursor: pointer; color: var(--text); background: var(--bg);
+  }
+  .chip:hover { background: var(--bg2); }
+  .chip.done { text-decoration: line-through; color: var(--text3); border-color: var(--border); }
+  .someday-add { display: flex; gap: 8px; }
+  .someday-add input {
+    flex: 1; background: none; border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 6px 10px; font-size: 12px;
+    color: var(--text); font-family: inherit;
+  }
+  .someday-add input:focus { outline: none; border-color: var(--green); }
+  .someday-add button {
+    background: none; border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 6px 12px;
+    font-size: 12px; cursor: pointer; color: var(--text);
+  }
+  .someday-add button:hover { background: var(--bg2); }
+
+  .status-bar { font-size: 11px; color: var(--text3); text-align: center; padding: 8px 0 0; min-height: 24px; }
+  .status-bar.ok { color: var(--green-dark); }
+  .status-bar.err { color: var(--orange); }
+</style>
+</head>
+<body>
+
+<!-- Setup Screen -->
+<div id="setupScreen">
+  <div class="setup-card">
+    <h1>Bruce<span style="color:#1D9E75">Deux</span></h1>
+    <p>Your personal TeuxDeux — powered by Notion. Enter your Anthropic API key to get started. It's stored only in your browser and never sent anywhere except the Anthropic API.</p>
+    <label for="apiKeyInput">Anthropic API Key</label>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off">
+    <p class="hint">Get your key at <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> → API Keys → Create Key</p>
+    <button class="btn-primary" onclick="saveKey()">Open BruceDeux</button>
+  </div>
+</div>
+
+<!-- App Screen -->
+<div id="appScreen">
+  <div class="top-bar">
+    <div style="display:flex;align-items:center;gap:16px">
+      <span class="app-title">Bruce<span>Deux</span></span>
+      <div class="week-nav">
+        <button class="nav-btn" onclick="changeWeek(-1)">&#8592;</button>
+        <span class="week-label" id="weekLabel"></span>
+        <button class="nav-btn" onclick="changeWeek(1)">&#8594;</button>
+        <button class="nav-btn" onclick="goToday()">Today</button>
+      </div>
+    </div>
+    <div class="right-actions">
+      <span class="pending-badge" id="pendingBadge">0</span>
+      <button class="sync-btn" id="syncBtn" onclick="syncAll()">
+        <span class="sync-dot"></span>
+        <span id="syncLabel">Sync Notion</span>
+      </button>
+      <button class="settings-btn" onclick="resetKey()" title="Change API key">&#9881;</button>
+    </div>
+  </div>
+
+  <div class="overdue-bar" id="overdueBanner"></div>
+  <div class="columns" id="columns"></div>
+
+  <div class="someday">
+    <div class="someday-head">Someday</div>
+    <div class="someday-chips" id="somedayChips"></div>
+    <div class="someday-add">
+      <input id="somedayInput" placeholder="Add a someday task..." onkeydown="if(event.key==='Enter')addSomeday()">
+      <button onclick="addSomeday()">Add</button>
+    </div>
+  </div>
+
+  <div class="status-bar" id="statusBar"></div>
+</div>
+
+<script>
+const NOTION_DB = 'collection://2463401f-1a99-80fa-ad27-000b91c4691a';
+const MCP = [{type:'url',url:'https://mcp.notion.com/mcp',name:'notion-mcp'}];
+const CAT_COLORS = {
+  'Personal':'#378ADD','Benefits Board':'#D85A30','Property Management':'#639922',
+  'Cardiac':'#D4537E','Estate':'#BA7517','Aquisitions':'#7F77DD','Growth':'#1D9E75','Research':'#888780'
+};
+
+let weekOffset = 0;
+let tasks = {};
+let somedayTasks = [];
+let pendingSync = [];
+let isSyncing = false;
+let apiKey = '';
+
+function loadAll(){
+  apiKey = localStorage.getItem('bd_apikey')||'';
+  try{
+    const t=localStorage.getItem('bd_tasks'); if(t) tasks=JSON.parse(t);
+    const s=localStorage.getItem('bd_someday'); if(s) somedayTasks=JSON.parse(s);
+    const p=localStorage.getItem('bd_pending'); if(p) pendingSync=JSON.parse(p);
+  }catch(e){}
+}
+function saveAll(){
+  try{
+    localStorage.setItem('bd_tasks',JSON.stringify(tasks));
+    localStorage.setItem('bd_someday',JSON.stringify(somedayTasks));
+    localStorage.setItem('bd_pending',JSON.stringify(pendingSync));
+  }catch(e){}
+}
+
+function saveKey(){
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if(!k||!k.startsWith('sk-ant')){ alert('Please enter a valid Anthropic API key (starts with sk-ant)'); return; }
+  localStorage.setItem('bd_apikey', k);
+  apiKey = k;
+  showApp();
+}
+function resetKey(){
+  if(!confirm('Change API key?')) return;
+  localStorage.removeItem('bd_apikey');
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('setupScreen').style.display='flex';
+}
+function showApp(){
+  document.getElementById('setupScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  render();
+}
+
+function getWeekDates(offset){
+  const today=new Date(); const day=today.getDay();
+  const mon=new Date(today);
+  mon.setDate(today.getDate()-(day===0?6:day-1)+offset*7);
+  return Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d;});
+}
+function fmtDate(d){ return d.toISOString().split('T')[0]; }
+function isToday(d){ return fmtDate(d)===fmtDate(new Date()); }
+function escHtml(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+
+function setStatus(msg,type){
+  const el=document.getElementById('statusBar');
+  el.textContent=msg; el.className='status-bar'+(type?' '+type:'');
+}
+function setSyncing(on){
+  isSyncing=on;
+  const btn=document.getElementById('syncBtn');
+  btn.disabled=on;
+  document.getElementById('syncLabel').textContent=on?'Syncing...':'Sync Notion';
+}
+function updateBadge(){
+  const b=document.getElementById('pendingBadge');
+  if(pendingSync.length>0){b.style.display='inline-flex';b.textContent=pendingSync.length;}
+  else b.style.display='none';
+}
+
+function render(){
+  const days=getWeekDates(weekOffset);
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  document.getElementById('weekLabel').textContent=
+    `${MONTHS[days[0].getMonth()]} ${days[0].getDate()} – ${MONTHS[days[6].getMonth()]} ${days[6].getDate()}`;
+
+  const cols=document.getElementById('columns'); cols.innerHTML='';
+  days.forEach((d,i)=>{
+    const key=fmtDate(d);
+    const dayTasks=tasks[key]||[];
+    const col=document.createElement('div');
+    col.className='col'+(isToday(d)?' today':'');
+    col.innerHTML=`
+      <div class="col-head">
+        <div class="day-name">${DAYS[i]}</div>
+        <div class="day-num">${d.getDate()}</div>
+      </div>
+      <div class="task-list" id="list-${key}"></div>
+      <button class="add-row" onclick="startInlineAdd('${key}')">+ add</button>`;
+    cols.appendChild(col);
+
+    const list=col.querySelector(`#list-${key}`);
+    dayTasks.forEach((task,ti)=>{
+      const row=document.createElement('div'); row.className='task-row';
+      const color=task.categories&&task.categories[0]?CAT_COLORS[task.categories[0]]||'#888':
+        'var(--border2)';
+      const isPushing=pendingSync.some(p=>p.notionUrl===task.notionUrl&&task.notionUrl);
+      row.innerHTML=`
+        <div class="cat-dot" style="background:${color}" title="${(task.categories||[]).join(', ')}"></div>
+        <div class="check${task.done?' done':''}${isPushing?' pushing':''}" onclick="toggleTask('${key}',${ti})"></div>
+        <span class="task-label${task.done?' done':''}">${escHtml(task.text)}</span>
+        ${task.fromNotion?'<span class="n-badge">N</span>':''}`;
+      list.appendChild(row);
+    });
+  });
+
+  renderSomeday();
+  renderOverdue();
+  updateBadge();
+}
+
+function startInlineAdd(key){
+  const list=document.getElementById('list-'+key);
+  const inp=document.createElement('input');
+  inp.className='inline-input'; inp.placeholder='Task name...';
+  inp.onkeydown=e=>{
+    if(e.key==='Enter'){ commitInlineAdd(key,inp.value); inp.remove(); }
+    if(e.key==='Escape') inp.remove();
+  };
+  inp.onblur=()=>{ if(inp.value.trim()) commitInlineAdd(key,inp.value); inp.remove(); };
+  list.appendChild(inp); inp.focus();
+}
+function commitInlineAdd(key,val){
+  const text=val.trim(); if(!text) return;
+  if(!tasks[key]) tasks[key]=[];
+  tasks[key].push({text,done:false,fromNotion:false,categories:[]});
+  saveAll(); render();
+}
+
+function toggleTask(key,idx){
+  if(!tasks[key]) return;
+  const task=tasks[key][idx];
+  task.done=!task.done;
+  if(task.fromNotion&&task.notionUrl){
+    const ei=pendingSync.findIndex(p=>p.notionUrl===task.notionUrl);
+    if(ei>-1) pendingSync.splice(ei,1);
+    else pendingSync.push({notionUrl:task.notionUrl,text:task.text,done:task.done});
+  }
+  saveAll(); render();
+  if(task.fromNotion&&task.notionUrl) flushPending();
+}
+
+function renderSomeday(){
+  const c=document.getElementById('somedayChips'); c.innerHTML='';
+  somedayTasks.forEach((t,i)=>{
+    const el=document.createElement('div');
+    el.className='chip'+(t.done?' done':''); el.textContent=t.text;
+    el.onclick=()=>{somedayTasks[i].done=!somedayTasks[i].done;saveAll();render();};
+    c.appendChild(el);
+  });
+}
+function addSomeday(){
+  const inp=document.getElementById('somedayInput');
+  const text=inp.value.trim(); if(!text) return;
+  somedayTasks.push({text,done:false}); inp.value='';
+  saveAll(); render();
+}
+
+function renderOverdue(){
+  const banner=document.getElementById('overdueBanner');
+  const today=fmtDate(new Date()); let count=0;
+  Object.keys(tasks).forEach(k=>{if(k<today) count+=tasks[k].filter(t=>!t.done).length;});
+  if(count>0){banner.style.display='block';banner.textContent=`${count} overdue task${count>1?'s':''} from previous days`;}
+  else banner.style.display='none';
+}
+
+function changeWeek(dir){weekOffset+=dir;render();}
+function goToday(){weekOffset=0;render();}
+
+async function callClaude(userPrompt){
+  if(!apiKey) throw new Error('No API key');
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-beta':'mcp-client-2025-04-04'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,
+      messages:[{role:'user',content:userPrompt}],mcp_servers:MCP})
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'API error');}
+  const data=await res.json();
+  let text='';
+  (data.content||[]).forEach(b=>{
+    if(b.type==='text') text+=b.text;
+    if(b.type==='mcp_tool_result') text+=(b.content?.[0]?.text||'');
+  });
+  return text;
+}
+
+async function flushPending(){
+  if(isSyncing||pendingSync.length===0) return;
+  setSyncing(true);
+  setStatus(`Pushing ${pendingSync.length} update${pendingSync.length>1?'s':''} to Notion...`,'');
+  const lines=pendingSync.map(p=>`- URL: ${p.notionUrl} | Mark: ${p.done?'Done':'Not started'}`).join('\n');
+  try{
+    await callClaude(`You have access to the Notion MCP server. Update each page's Status property:\n${lines}\nSet "Done" or "Not started" as specified. Return JSON: {"updated":number,"failed":number}`);
+    pendingSync=[]; saveAll(); render();
+    setStatus('Notion updated','ok');
+  }catch(e){setStatus('Push failed: '+e.message,'err');}
+  setSyncing(false);
+}
+
+async function syncAll(){
+  if(isSyncing) return;
+  setSyncing(true);
+  try{
+    if(pendingSync.length>0){
+      setStatus(`Pushing ${pendingSync.length} update${pendingSync.length>1?'s':''} to Notion...`,'');
+      const lines=pendingSync.map(p=>`- URL: ${p.notionUrl} | Mark: ${p.done?'Done':'Not started'}`).join('\n');
+      try{
+        await callClaude(`You have access to the Notion MCP server. Update each page's Status:\n${lines}\nReturn JSON: {"updated":number}`);
+        pendingSync=[];
+      }catch(e){setStatus('Warning: could not push updates','err');}
+    }
+
+    setStatus('Pulling tasks from Notion...','');
+    const raw=await callClaude(`You have access to the Notion MCP server. Query the Task Database (data source: ${NOTION_DB}). Return all tasks where Due Date is set AND Status is NOT "Done". Return ONLY a raw JSON array, no markdown. Each object must have: { "text": string, "dueDate": "YYYY-MM-DD", "status": string, "categories": string[], "project": string|null, "notionUrl": string }. notionUrl must be the full notion.so page URL. If none, return [].`);
+    const s=raw.indexOf('['),e=raw.lastIndexOf(']');
+    if(s===-1||e===-1) throw new Error('No data returned from Notion');
+    const fetched=JSON.parse(raw.substring(s,e+1));
+
+    let added=0,updated=0;
+    fetched.forEach(nt=>{
+      if(!nt.dueDate) return;
+      const key=nt.dueDate;
+      if(!tasks[key]) tasks[key]=[];
+      const ei=tasks[key].findIndex(t=>t.notionUrl===nt.notionUrl&&nt.notionUrl);
+      if(ei>-1){
+        tasks[key][ei].done=nt.status==='Done';
+        tasks[key][ei].categories=nt.categories||[];
+        updated++;
+      } else {
+        tasks[key].push({text:nt.text,done:nt.status==='Done',fromNotion:true,
+          categories:nt.categories||[],project:nt.project||null,notionUrl:nt.notionUrl});
+        added++;
+      }
+    });
+
+    saveAll(); render();
+    setStatus(`Synced: ${added} new, ${updated} updated`,'ok');
+  }catch(e){setStatus('Sync error: '+e.message,'err');}
+  setSyncing(false);
+}
+
+// Boot
+loadAll();
+if(apiKey) showApp();
+else document.getElementById('setupScreen').style.display='flex';
+</script>
+</body>
+</html>
