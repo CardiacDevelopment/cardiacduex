@@ -1,5 +1,5 @@
 [README.md](https://github.com/user-attachments/files/26645750/README.md)
-# BruceDeux
+# CardiacDeux
 
 A personal TeuxDeux-style daily planner with two-way Notion sync.
 
