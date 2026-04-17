@@ -1,537 +1,978 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BruceDeux</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cardiac Core</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --bg: #ffffff;
-    --bg2: #f7f6f3;
-    --bg3: #efede9;
-    --text: #1a1a1a;
-    --text2: #6b6b6b;
-    --text3: #aaaaaa;
-    --border: rgba(0,0,0,0.12);
-    --border2: rgba(0,0,0,0.22);
-    --green: #1D9E75;
-    --green-dark: #0F6E56;
-    --green-light: #E1F5EE;
-    --orange: #D85A30;
-    --orange-light: #FAECE7;
-    --radius: 10px;
-    --radius-sm: 6px;
-  }
-
-  @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #1e1e1e;
-      --bg2: #2a2a2a;
-      --bg3: #333333;
-      --text: #f0f0f0;
-      --text2: #aaaaaa;
-      --text3: #666666;
-      --border: rgba(255,255,255,0.1);
-      --border2: rgba(255,255,255,0.2);
-      --green-light: #0a2e21;
-      --orange-light: #2e1409;
+      --green: #00e664;
+      --bg: #0c0c0c;
+      --surface: #181818;
+      --border: rgba(255,255,255,0.09);
+      --text: #ffffff;
+      --muted: #666;
+      --dim: #999;
     }
-  }
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-    background: var(--bg3);
-    color: var(--text);
-    min-height: 100vh;
-  }
+    html, body {
+      height: 100%; height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
 
-  /* Setup screen */
-  #setupScreen {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 2rem;
-  }
-  .setup-card {
-    background: var(--bg);
-    border-radius: var(--radius);
-    border: 0.5px solid var(--border);
-    padding: 2.5rem;
-    max-width: 460px;
-    width: 100%;
-  }
-  .setup-card h1 { font-size: 22px; font-weight: 500; margin-bottom: 6px; }
-  .setup-card p { font-size: 14px; color: var(--text2); margin-bottom: 1.5rem; line-height: 1.6; }
-  .setup-card label { font-size: 13px; font-weight: 500; display: block; margin-bottom: 6px; }
-  .setup-card input {
-    width: 100%; padding: 9px 12px; font-size: 14px;
-    border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
-    background: var(--bg); color: var(--text); margin-bottom: 1rem;
-    font-family: monospace;
-  }
-  .setup-card input:focus { outline: none; border-color: var(--green); }
-  .setup-card .hint { font-size: 12px; color: var(--text3); margin-top: -8px; margin-bottom: 1rem; }
-  .setup-card .hint a { color: var(--green); text-decoration: none; }
-  .btn-primary {
-    width: 100%; padding: 10px; background: var(--green); color: #fff;
-    border: none; border-radius: var(--radius-sm); font-size: 14px;
-    font-weight: 500; cursor: pointer;
-  }
-  .btn-primary:hover { opacity: 0.9; }
+    /* ─────────────────────────────────────
+       MOBILE
+    ───────────────────────────────────── */
+    .mob {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+    }
 
-  /* App screen */
-  #appScreen { display: none; max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
+    /* Header */
+    .mob-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 18px 20px 10px;
+      flex-shrink: 0;
+    }
+    .mob-date {
+      font-size: 26px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      line-height: 1.1;
+    }
+    .mob-menu {
+      background: none; border: none;
+      color: var(--text); font-size: 22px;
+      cursor: pointer; padding: 4px; margin-top: 2px;
+      line-height: 1;
+    }
 
-  .top-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 1.25rem; flex-wrap: wrap; gap: 10px;
-  }
-  .app-title { font-size: 18px; font-weight: 500; letter-spacing: -0.02em; }
-  .app-title span { color: var(--green); }
+    /* Task scroll area */
+    .mob-scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
 
-  .week-nav { display: flex; align-items: center; gap: 8px; }
-  .nav-btn {
-    background: none; border: 0.5px solid var(--border2);
-    border-radius: var(--radius-sm); padding: 5px 11px;
-    cursor: pointer; font-size: 13px; color: var(--text);
-  }
-  .nav-btn:hover { background: var(--bg2); }
-  .week-label { font-size: 13px; color: var(--text2); min-width: 130px; text-align: center; }
+    /* Task items */
+    .task-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 15px 20px;
+      cursor: pointer;
+    }
+    .task-row + .task-row {
+      border-top: 1px solid var(--border);
+    }
+    .task-check {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      background: var(--green);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .task-check.empty {
+      background: transparent;
+      border: 2px solid var(--green);
+    }
+    .task-check.done-check::after {
+      content: '';
+      width: 6px; height: 11px;
+      border: 2.5px solid #000;
+      border-top: none; border-left: none;
+      transform: rotate(45deg) translate(-1px,-1px);
+      display: block;
+    }
+    .task-text {
+      font-size: 17px;
+      font-weight: 400;
+      line-height: 1.3;
+      color: var(--text);
+    }
+    .task-row.done .task-text {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+    .task-row.done .task-check {
+      background: var(--muted);
+      border-color: var(--muted);
+    }
 
-  .right-actions { display: flex; align-items: center; gap: 8px; }
-  .sync-btn {
-    display: flex; align-items: center; gap: 6px;
-    background: none; border: 0.5px solid var(--border2);
-    border-radius: var(--radius-sm); padding: 6px 14px;
-    cursor: pointer; font-size: 13px; color: var(--text);
-  }
-  .sync-btn:hover { background: var(--bg2); }
-  .sync-btn:disabled { opacity: 0.5; pointer-events: none; }
-  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
-  .pending-badge {
-    display: none; background: var(--orange); color: #fff;
-    border-radius: 10px; font-size: 10px; padding: 1px 6px;
-    font-weight: 500;
-  }
-  .settings-btn {
-    background: none; border: 0.5px solid var(--border);
-    border-radius: var(--radius-sm); padding: 6px 10px;
-    cursor: pointer; font-size: 13px; color: var(--text2);
-  }
-  .settings-btn:hover { background: var(--bg2); }
+    /* Inline add row */
+    .add-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+    }
+    .add-row-check {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      border: 2px solid var(--muted);
+      flex-shrink: 0;
+    }
+    .add-row-input {
+      flex: 1;
+      background: none; border: none;
+      color: var(--dim);
+      font-size: 17px; font-family: inherit;
+      outline: none;
+    }
+    .add-row-input::placeholder { color: var(--muted); }
+    .add-row-input:focus { color: var(--text); }
 
-  .overdue-bar {
-    display: none; background: var(--orange-light);
-    border: 0.5px solid #F0997B; border-radius: var(--radius-sm);
-    padding: 7px 14px; margin-bottom: 10px;
-    font-size: 12px; color: #993C1D;
-  }
+    /* Bottom green nav */
+    .mob-bottom {
+      flex-shrink: 0;
+      background: var(--green);
+    }
+    .day-strip {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      gap: 2px;
+    }
+    .day-strip::-webkit-scrollbar { display: none; }
 
-  /* Columns */
-  .columns {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 8px;
-    margin-bottom: 1.25rem;
-  }
+    .day-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 56px;
+      padding: 4px 6px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+    .day-pill:hover { background: rgba(0,0,0,0.08); }
+    .day-pill.active {
+      background: #000;
+      border-radius: 50%;
+      width: 52px; min-width: 52px;
+      height: 52px;
+      justify-content: center;
+    }
+    .day-pill .p-date {
+      font-size: 14px;
+      font-weight: 700;
+      color: #000;
+      line-height: 1;
+    }
+    .day-pill .p-wd {
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(0,0,0,0.55);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-top: 1px;
+    }
+    .day-pill.active .p-date { color: #fff; }
+    .day-pill.active .p-wd { color: rgba(255,255,255,0.65); }
 
-  @media (max-width: 700px) {
-    .columns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .columns .col:nth-child(n+4) { display: none; }
-  }
+    .mob-nav-row {
+      display: flex;
+      align-items: center;
+      padding: 4px 20px 10px;
+    }
+    .mob-nav-tab {
+      flex: 1;
+      background: none; border: none;
+      font-size: 13px; font-weight: 800;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      color: #000; cursor: pointer;
+      text-align: center; padding: 4px 0;
+    }
+    .mob-nav-tab .dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: #000;
+      margin: 3px auto 0;
+      opacity: 0;
+    }
+    .mob-nav-tab.active .dot { opacity: 1; }
+    .mob-add-tab {
+      flex: 1;
+      background: none; border: none;
+      font-size: 28px; font-weight: 300;
+      color: #000; cursor: pointer;
+      text-align: center; line-height: 1; padding: 0;
+    }
 
-  .col {
-    background: var(--bg); border: 0.5px solid var(--border);
-    border-radius: var(--radius); padding: 10px 8px; min-height: 130px;
-  }
-  .col.today { border-color: var(--green); border-width: 1.5px; }
-  .col-head { border-bottom: 0.5px solid var(--border); padding-bottom: 7px; margin-bottom: 8px; }
-  .day-name { font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
-  .day-num { font-size: 18px; font-weight: 500; line-height: 1.2; }
-  .col.today .day-num { color: var(--green-dark); }
+    /* ─────────────────────────────────────
+       DESKTOP
+    ───────────────────────────────────── */
+    .desk {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+    }
 
-  .task-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 4px; }
-  .task-row {
-    display: flex; align-items: flex-start; gap: 5px;
-    padding: 3px 2px; border-radius: 4px; cursor: default;
-  }
-  .task-row:hover { background: var(--bg2); }
-  .cat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
-  .check {
-    width: 13px; height: 13px; border-radius: 3px;
-    border: 1.5px solid var(--border2); flex-shrink: 0;
-    margin-top: 1px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.1s, border-color 0.1s;
-  }
-  .check.done { background: var(--green); border-color: var(--green); }
-  .check.done::after {
-    content: ''; display: block; width: 7px; height: 4px;
-    border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff;
-    transform: rotate(-45deg) translateY(-1px);
-  }
-  .check.pushing { background: var(--orange); border-color: var(--orange); animation: pulse 0.7s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-  .task-label { font-size: 11px; line-height: 1.45; color: var(--text); flex: 1; word-break: break-word; }
-  .task-label.done { text-decoration: line-through; color: var(--text3); }
-  .n-badge { font-size: 9px; padding: 1px 4px; border-radius: 3px; background: var(--bg2); color: var(--text3); flex-shrink: 0; margin-top: 1px; }
-  .add-row {
-    width: 100%; background: none; border: none; text-align: left;
-    font-size: 11px; color: var(--text3); cursor: pointer;
-    padding: 3px 2px; border-radius: 4px;
-  }
-  .add-row:hover { background: var(--bg2); color: var(--text2); }
+    /* Green accent line */
+    .desk-accent { height: 3px; background: var(--green); flex-shrink: 0; }
 
-  /* Inline add input */
-  .inline-input {
-    width: 100%; background: none; border: none; border-bottom: 1px solid var(--green);
-    font-size: 11px; color: var(--text); padding: 2px 0; outline: none;
-    font-family: inherit;
-  }
+    /* Desktop header */
+    .desk-header {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 46px;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .desk-logo {
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      font-size: 14px; font-weight: 900;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--green);
+    }
+    .desk-hbtn {
+      background: none; border: none;
+      color: var(--muted); cursor: pointer;
+      font-size: 18px; padding: 4px 6px; line-height: 1;
+      transition: color 0.15s;
+    }
+    .desk-hbtn:hover { color: var(--text); }
+    .desk-hl { display: flex; align-items: center; gap: 2px; }
+    .desk-hr { display: flex; align-items: center; gap: 4px; }
 
-  /* Someday */
-  .someday {
-    background: var(--bg); border: 0.5px solid var(--border);
-    border-radius: var(--radius); padding: 14px;
-  }
-  .someday-head {
-    font-size: 10px; font-weight: 500; color: var(--text3);
-    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
-  }
-  .someday-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; min-height: 10px; }
-  .chip {
-    font-size: 12px; padding: 4px 12px;
-    border: 0.5px solid var(--border2); border-radius: 20px;
-    cursor: pointer; color: var(--text); background: var(--bg);
-  }
-  .chip:hover { background: var(--bg2); }
-  .chip.done { text-decoration: line-through; color: var(--text3); border-color: var(--border); }
-  .someday-add { display: flex; gap: 8px; }
-  .someday-add input {
-    flex: 1; background: none; border: 0.5px solid var(--border);
-    border-radius: var(--radius-sm); padding: 6px 10px; font-size: 12px;
-    color: var(--text); font-family: inherit;
-  }
-  .someday-add input:focus { outline: none; border-color: var(--green); }
-  .someday-add button {
-    background: none; border: 0.5px solid var(--border2);
-    border-radius: var(--radius-sm); padding: 6px 12px;
-    font-size: 12px; cursor: pointer; color: var(--text);
-  }
-  .someday-add button:hover { background: var(--bg2); }
+    /* Columns */
+    .desk-body {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+    }
+    .desk-cols {
+      flex: 1; display: flex; overflow: hidden; min-height: 0;
+    }
+    .dcol {
+      flex: 1; display: flex; flex-direction: column;
+      border-right: 1px solid var(--border); min-width: 0;
+    }
+    .dcol:last-child { border-right: none; }
 
-  .status-bar { font-size: 11px; color: var(--text3); text-align: center; padding: 8px 0 0; min-height: 24px; }
-  .status-bar.ok { color: var(--green-dark); }
-  .status-bar.err { color: var(--orange); }
-</style>
+    .dcol-head {
+      padding: 14px 18px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .dcol-small {
+      font-size: 11px; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 3px;
+    }
+    .dcol-name {
+      font-size: 24px; font-weight: 900;
+      text-transform: uppercase; line-height: 1;
+      color: var(--text);
+    }
+    .dcol.is-today .dcol-name { color: var(--green); }
+
+    .dcol-tasks { flex: 1; overflow-y: auto; }
+
+    .dtask {
+      padding: 10px 18px;
+      font-size: 14px; color: var(--text);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.1s;
+      line-height: 1.35;
+    }
+    .dtask:hover { background: rgba(255,255,255,0.03); }
+    .dtask.done { color: var(--muted); text-decoration: line-through; }
+
+    .dcol-input {
+      width: 100%; background: none; border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--dim); font-size: 14px; font-family: inherit;
+      padding: 10px 18px; outline: none;
+    }
+    .dcol-input::placeholder { color: var(--muted); }
+    .dcol-input:focus { color: var(--text); border-bottom-color: var(--green); }
+
+    /* Rundown */
+    .rundown {
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      max-height: 260px;
+      display: flex; flex-direction: column;
+    }
+    .rundown-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 18px 5px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .rundown-dots { color: var(--muted); font-size: 15px; cursor: pointer; }
+    .rundown-label-wrap {}
+    .rundown-label {
+      font-size: 12px; font-weight: 800;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .rundown-count { font-size: 12px; color: var(--muted); }
+    .rundown-underline { height: 2px; background: var(--green); width: 56px; margin-top: 2px; }
+    .rundown-addbtn {
+      background: none; border: none;
+      color: var(--muted); font-size: 18px; cursor: pointer; line-height: 1;
+    }
+    .rundown-toggle {
+      margin-left: auto; background: none; border: none;
+      color: var(--muted); cursor: pointer; font-size: 14px;
+    }
+
+    .rundown-lists {
+      display: flex; overflow-x: auto; flex: 1;
+      scrollbar-width: thin;
+    }
+    .rl-col {
+      flex: 0 0 240px; border-right: 1px solid var(--border);
+      padding: 10px 16px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 0;
+    }
+    .rl-col:last-child { border-right: none; }
+    .rl-title {
+      font-size: 13px; font-weight: 900;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      margin-bottom: 8px;
+    }
+    .rl-item {
+      font-size: 13px; color: var(--text);
+      padding: 6px 0; border-bottom: 1px solid var(--border);
+      cursor: pointer; line-height: 1.3;
+    }
+    .rl-item:last-of-type { border-bottom: none; }
+    .rl-item.bold { font-weight: 700; }
+    .rl-item.muted { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .rl-addinput {
+      background: none; border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--dim); font-size: 13px; font-family: inherit;
+      padding: 6px 0; outline: none; width: 100%; margin-top: 4px;
+    }
+    .rl-addinput::placeholder { color: var(--muted); }
+    .rl-addinput:focus { color: var(--text); border-bottom-color: var(--green); }
+    .rl-newbtn {
+      background: none; border: 1px solid var(--border);
+      color: var(--muted); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 7px 14px; cursor: pointer; border-radius: 4px;
+      margin: 10px 16px; white-space: nowrap; flex-shrink: 0;
+      transition: all 0.15s; align-self: flex-start;
+    }
+    .rl-newbtn:hover { border-color: var(--green); color: var(--green); }
+
+    /* Desktop bottom bar */
+    .desk-footer {
+      height: 38px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center;
+      justify-content: center; gap: 16px;
+      flex-shrink: 0; position: relative;
+    }
+    .fpg {
+      background: none; border: none;
+      font-size: 13px; color: var(--muted);
+      cursor: pointer; padding: 3px 8px; border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .fpg:hover { color: var(--text); }
+    .fpg.active { background: var(--green); color: #000; font-weight: 700; }
+    .f-icon {
+      background: none; border: none;
+      color: var(--muted); font-size: 15px; cursor: pointer;
+      position: absolute;
+    }
+
+    /* ─────────────────────────────────────
+       SETTINGS DRAWER
+    ───────────────────────────────────── */
+    .s-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6); z-index: 200;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .s-overlay.open { opacity: 1; pointer-events: all; }
+    .s-drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; width: 280px;
+      background: var(--surface); border-left: 1px solid var(--border);
+      z-index: 201; transform: translateX(100%);
+      transition: transform 0.25s ease; padding: 20px 0;
+      display: flex; flex-direction: column;
+    }
+    .s-overlay.open .s-drawer { transform: translateX(0); }
+    .s-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px 14px; border-bottom: 1px solid var(--border); margin-bottom: 6px;
+    }
+    .s-title { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .s-x { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; }
+    .s-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 20px; font-size: 14px; color: var(--dim);
+      cursor: pointer; border: none; background: none; width: 100%; text-align: left;
+      transition: background 0.12s, color 0.12s; font-family: inherit;
+    }
+    .s-row:hover { background: #222; color: #fff; }
+    .s-row.red { color: #e64444; }
+    .s-row.red:hover { color: #ff6666; }
+
+    /* ─────────────────────────────────────
+       ADD TASK MODAL (mobile)
+    ───────────────────────────────────── */
+    .add-modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7); z-index: 300;
+      display: flex; align-items: flex-end;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .add-modal.open { opacity: 1; pointer-events: all; }
+    .add-sheet {
+      width: 100%; background: var(--surface);
+      border-radius: 18px 18px 0 0;
+      padding: 20px 16px 36px;
+      transform: translateY(100%);
+      transition: transform 0.25s ease;
+    }
+    .add-modal.open .add-sheet { transform: translateY(0); }
+    .add-handle { width: 36px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 20px; }
+    .add-lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .add-inp {
+      width: 100%; background: #222; border: 1px solid #333;
+      border-radius: 10px; color: #fff; font-size: 16px;
+      padding: 12px 14px; outline: none; margin-bottom: 14px; font-family: inherit;
+    }
+    .add-inp:focus { border-color: var(--green); }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+    .chip {
+      padding: 5px 12px; border-radius: 20px;
+      border: 1px solid #333; background: none;
+      color: #888; font-size: 12px; cursor: pointer;
+      transition: all 0.15s; font-family: inherit;
+    }
+    .chip.sel { border-color: var(--green); color: var(--green); background: rgba(0,230,100,0.1); }
+    .add-submit {
+      width: 100%; background: var(--green); border: none;
+      border-radius: 10px; color: #000; font-size: 15px;
+      font-weight: 700; padding: 13px; cursor: pointer; font-family: inherit;
+    }
+
+    /* ─────────────────────────────────────
+       API KEY MODAL
+    ───────────────────────────────────── */
+    .api-modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75); z-index: 400;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .api-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px 20px; width: 100%; max-width: 380px;
+    }
+    .api-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .api-desc { font-size: 13px; color: var(--dim); margin-bottom: 16px; line-height: 1.5; }
+    .api-inp {
+      width: 100%; background: #222; border: 1px solid var(--border);
+      border-radius: 8px; color: #fff; font-size: 14px;
+      padding: 10px 12px; outline: none; margin-bottom: 12px; font-family: monospace;
+    }
+    .api-inp:focus { border-color: var(--green); }
+    .api-btns { display: flex; gap: 8px; }
+    .api-save {
+      flex: 1; background: var(--green); border: none;
+      border-radius: 8px; color: #000; font-size: 14px; font-weight: 700;
+      padding: 10px; cursor: pointer;
+    }
+    .api-cancel {
+      background: #222; border: 1px solid var(--border);
+      border-radius: 8px; color: var(--dim); font-size: 14px;
+      padding: 10px 16px; cursor: pointer;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (min-width: 680px) {
+      .mob  { display: none; }
+      .desk { display: flex; }
+    }
+  </style>
 </head>
 <body>
 
-<!-- Setup Screen -->
-<div id="setupScreen">
-  <div class="setup-card">
-    <h1>Bruce<span style="color:#1D9E75">Deux</span></h1>
-    <p>Your personal TeuxDeux — powered by Notion. Enter your Anthropic API key to get started. It's stored only in your browser and never sent anywhere except the Anthropic API.</p>
-    <label for="apiKeyInput">Anthropic API Key</label>
-    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off">
-    <p class="hint">Get your key at <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> → API Keys → Create Key</p>
-    <button class="btn-primary" onclick="saveKey()">Open BruceDeux</button>
+<!-- ══════════════════════════════════
+     MOBILE
+══════════════════════════════════ -->
+<div class="mob" id="mob">
+
+  <header class="mob-header">
+    <div class="mob-date" id="mobDate"></div>
+    <button class="mob-menu" onclick="openSettings()">≡</button>
+  </header>
+
+  <div class="mob-scroll" id="mobScroll"></div>
+
+  <div class="mob-bottom">
+    <div class="day-strip" id="dayStrip"></div>
+    <div class="mob-nav-row">
+      <button class="mob-nav-tab active" id="tabToday" onclick="mobTab('today')">
+        TODAY<div class="dot"></div>
+      </button>
+      <button class="mob-add-tab" onclick="openAddModal()">+</button>
+      <button class="mob-nav-tab" id="tabSomeday" onclick="mobTab('someday')">
+        SOMEDAY<div class="dot"></div>
+      </button>
+    </div>
   </div>
 </div>
 
-<!-- App Screen -->
-<div id="appScreen">
-  <div class="top-bar">
-    <div style="display:flex;align-items:center;gap:16px">
-      <span class="app-title">Bruce<span>Deux</span></span>
-      <div class="week-nav">
-        <button class="nav-btn" onclick="changeWeek(-1)">&#8592;</button>
-        <span class="week-label" id="weekLabel"></span>
-        <button class="nav-btn" onclick="changeWeek(1)">&#8594;</button>
-        <button class="nav-btn" onclick="goToday()">Today</button>
+<!-- ══════════════════════════════════
+     DESKTOP
+══════════════════════════════════ -->
+<div class="desk" id="desk">
+
+  <div class="desk-accent"></div>
+
+  <header class="desk-header">
+    <div class="desk-hl">
+      <button class="desk-hbtn" title="Search">🔍</button>
+    </div>
+    <div class="desk-logo">CARDIAC CORE</div>
+    <div class="desk-hr">
+      <button class="desk-hbtn" onclick="dNav(-5)" title="Back week">«</button>
+      <button class="desk-hbtn" onclick="dNav(-1)" title="Previous">‹</button>
+      <button class="desk-hbtn" onclick="dNav(1)"  title="Next">›</button>
+      <button class="desk-hbtn" onclick="dNav(5)"  title="Forward week">»</button>
+      <button class="desk-hbtn" onclick="openSettings()" title="Menu">≡</button>
+    </div>
+  </header>
+
+  <div class="desk-body">
+    <div class="desk-cols" id="deskCols"></div>
+
+    <div class="rundown">
+      <div class="rundown-bar">
+        <span class="rundown-dots">⋮</span>
+        <div class="rundown-label-wrap">
+          <div class="rundown-label">
+            Rundown <span class="rundown-count" id="rdCount">0</span>
+            <button class="rundown-addbtn" onclick="addRdList()">+</button>
+          </div>
+          <div class="rundown-underline"></div>
+        </div>
+        <button class="rundown-toggle" onclick="toggleRd()">▾</button>
       </div>
-    </div>
-    <div class="right-actions">
-      <span class="pending-badge" id="pendingBadge">0</span>
-      <button class="sync-btn" id="syncBtn" onclick="syncAll()">
-        <span class="sync-dot"></span>
-        <span id="syncLabel">Sync Notion</span>
-      </button>
-      <button class="settings-btn" onclick="resetKey()" title="Change API key">&#9881;</button>
+      <div class="rundown-lists" id="rdLists"></div>
     </div>
   </div>
 
-  <div class="overdue-bar" id="overdueBanner"></div>
-  <div class="columns" id="columns"></div>
+  <footer class="desk-footer">
+    <button class="f-icon" style="left:16px" onclick="openSettings()">↺</button>
+    <button class="fpg" onclick="dJump(-4)">1</button>
+    <button class="fpg" onclick="dJump(-2)">3</button>
+    <button class="fpg active"            >5</button>
+    <button class="fpg" onclick="dJump(2)">7</button>
+    <button class="f-icon" style="right:40px">⚙</button>
+    <button class="f-icon" style="right:14px">👤</button>
+  </footer>
+</div>
 
-  <div class="someday">
-    <div class="someday-head">Someday</div>
-    <div class="someday-chips" id="somedayChips"></div>
-    <div class="someday-add">
-      <input id="somedayInput" placeholder="Add a someday task..." onkeydown="if(event.key==='Enter')addSomeday()">
-      <button onclick="addSomeday()">Add</button>
+<!-- SETTINGS DRAWER -->
+<div class="s-overlay" id="sOverlay" onclick="overlayClose(event)">
+  <div class="s-drawer">
+    <div class="s-head">
+      <span class="s-title">Settings</span>
+      <button class="s-x" onclick="closeSettings()">×</button>
+    </div>
+    <button class="s-row" onclick="doSync()">🔄&nbsp; Sync with Notion</button>
+    <button class="s-row" onclick="doExport()">📤&nbsp; Export Tasks</button>
+    <button class="s-row" onclick="doLoadExamples()">✨&nbsp; Load Example Tasks</button>
+    <button class="s-row" onclick="doManageKey()">🔑&nbsp; Manage API Key</button>
+    <button class="s-row red" onclick="doClear()">🗑&nbsp; Clear All Tasks</button>
+  </div>
+</div>
+
+<!-- ADD TASK MODAL -->
+<div class="add-modal" id="addModal" onclick="addModalOutside(event)">
+  <div class="add-sheet" onclick="stopProp(event)">
+    <div class="add-handle"></div>
+    <div class="add-lbl">Task</div>
+    <input class="add-inp" id="addInp" placeholder="What needs to get done?" />
+    <div class="add-lbl">Category</div>
+    <div class="chip-row" id="catChips"></div>
+    <div class="add-lbl">Add to</div>
+    <div class="chip-row" id="targetChips">
+      <button class="chip sel" data-t="today">Today</button>
+      <button class="chip"     data-t="tomorrow">Tomorrow</button>
+      <button class="chip"     data-t="someday">Someday</button>
+    </div>
+    <button class="add-submit" onclick="submitAdd()">Add Task</button>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="api-modal hidden" id="apiModal">
+  <div class="api-box">
+    <div class="api-title">API Key Required</div>
+    <div class="api-desc">Enter your Claude API key to use Notion sync. You'll only be asked when you need it.</div>
+    <input class="api-inp" id="apiInp" type="password" placeholder="sk-ant-..." />
+    <div class="api-btns">
+      <button class="api-cancel" onclick="closeApiModal()">Cancel</button>
+      <button class="api-save"   onclick="saveApiKey()">Save</button>
     </div>
   </div>
-
-  <div class="status-bar" id="statusBar"></div>
 </div>
 
 <script>
-const NOTION_DB = 'collection://2463401f-1a99-80fa-ad27-000b91c4691a';
-const MCP = [{type:'url',url:'https://mcp.notion.com/mcp',name:'notion-mcp'}];
-const CAT_COLORS = {
-  'Personal':'#378ADD','Benefits Board':'#D85A30','Property Management':'#639922',
-  'Cardiac':'#D4537E','Estate':'#BA7517','Aquisitions':'#7F77DD','Growth':'#1D9E75','Research':'#888780'
-};
+// ── DATA ──────────────────────────────────────────────────────────────
+const CATS = ['Personal','Cardiac','Benefits Board','Property Management','Research','Finance'];
 
-let weekOffset = 0;
-let tasks = {};
-let somedayTasks = [];
-let pendingSync = [];
-let isSyncing = false;
-let apiKey = '';
+const EXAMPLE_TASKS = [
+  {id:'e1', text:'Send art and Gayla email update', cat:'Personal',           dateKey:'today',    done:false},
+  {id:'e2', text:'Call Aaron',                      cat:'Cardiac',            dateKey:'today',    done:false},
+  {id:'e3', text:'Message Aptive',                  cat:'Property Management',dateKey:'today',    done:false},
+  {id:'e4', text:'Buy mom iPad',                    cat:'Personal',           dateKey:'today',    done:false},
+  {id:'e5', text:'Review Q1 financials',            cat:'Finance',            dateKey:'tomorrow', done:false},
+  {id:'e6', text:'Benefits board meeting prep',     cat:'Benefits Board',     dateKey:'tomorrow', done:false},
+  {id:'e7', text:'Research CRM options',            cat:'Research',           dateKey:'someday',  done:false},
+  {id:'e8', text:'Update provider contracts',       cat:'Cardiac',            dateKey:'someday',  done:false},
+];
 
-function loadAll(){
-  apiKey = localStorage.getItem('bd_apikey')||'';
-  try{
-    const t=localStorage.getItem('bd_tasks'); if(t) tasks=JSON.parse(t);
-    const s=localStorage.getItem('bd_someday'); if(s) somedayTasks=JSON.parse(s);
-    const p=localStorage.getItem('bd_pending'); if(p) pendingSync=JSON.parse(p);
-  }catch(e){}
-}
-function saveAll(){
-  try{
-    localStorage.setItem('bd_tasks',JSON.stringify(tasks));
-    localStorage.setItem('bd_someday',JSON.stringify(somedayTasks));
-    localStorage.setItem('bd_pending',JSON.stringify(pendingSync));
-  }catch(e){}
-}
+const EXAMPLE_RUNDOWN = [
+  {id:'rl1',title:'WORK PAYMENTS',items:[
+    {id:'ri1',text:'Communications days (0) need (100)',bold:false,muted:true},
+    {id:'ri2',text:'Invoices to submit',bold:true},
+    {id:'ri3',text:'April 16 - Council Setup'},
+    {id:'ri4',text:'April 15 - chapel'},
+    {id:'ri5',text:'April 14 - Chapel Setup'},
+    {id:'ri6',text:'Pending',bold:true},
+    {id:'ri7',text:'Cardiac Invoices',muted:true},
+  ]},
+  {id:'rl2',title:'THIS WEEK',items:[{id:'ri8',text:'Pay graduation fee'}]},
+  {id:'rl3',title:'WEEKEND',items:[
+    {id:'ri9', text:'Prep for Wednesday meeting'},
+    {id:'ri10',text:'Watch AI videos'},
+    {id:'ri11',text:'Kalea anniversary gift'},
+    {id:'ri12',text:'Buy playing card holders for Mother\'s…'},
+    {id:'ri13',text:'Replace Air filters'},
+  ]},
+  {id:'rl4',title:'NEXT WEEK',items:[]},
+];
 
-function saveKey(){
-  const k = document.getElementById('apiKeyInput').value.trim();
-  if(!k||!k.startsWith('sk-ant')){ alert('Please enter a valid Anthropic API key (starts with sk-ant)'); return; }
-  localStorage.setItem('bd_apikey', k);
-  apiKey = k;
-  showApp();
-}
-function resetKey(){
-  if(!confirm('Change API key?')) return;
-  localStorage.removeItem('bd_apikey');
-  document.getElementById('appScreen').style.display='none';
-  document.getElementById('setupScreen').style.display='flex';
-}
-function showApp(){
-  document.getElementById('setupScreen').style.display='none';
-  document.getElementById('appScreen').style.display='block';
-  render();
-}
+let tasks    = [];
+let rundown  = [];
+let mOffset  = 0;    // mobile: days offset from today
+let mView    = 'today'; // 'today' | 'someday'
+let dOffset  = 0;    // desktop: column start offset
+let selCat   = CATS[0];
+let selTarget= 'today';
 
-function getWeekDates(offset){
-  const today=new Date(); const day=today.getDay();
-  const mon=new Date(today);
-  mon.setDate(today.getDate()-(day===0?6:day-1)+offset*7);
-  return Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d;});
-}
-function fmtDate(d){ return d.toISOString().split('T')[0]; }
-function isToday(d){ return fmtDate(d)===fmtDate(new Date()); }
-function escHtml(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
-
-function setStatus(msg,type){
-  const el=document.getElementById('statusBar');
-  el.textContent=msg; el.className='status-bar'+(type?' '+type:'');
-}
-function setSyncing(on){
-  isSyncing=on;
-  const btn=document.getElementById('syncBtn');
-  btn.disabled=on;
-  document.getElementById('syncLabel').textContent=on?'Syncing...':'Sync Notion';
-}
-function updateBadge(){
-  const b=document.getElementById('pendingBadge');
-  if(pendingSync.length>0){b.style.display='inline-flex';b.textContent=pendingSync.length;}
-  else b.style.display='none';
-}
-
-function render(){
-  const days=getWeekDates(weekOffset);
-  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  document.getElementById('weekLabel').textContent=
-    `${MONTHS[days[0].getMonth()]} ${days[0].getDate()} – ${MONTHS[days[6].getMonth()]} ${days[6].getDate()}`;
-
-  const cols=document.getElementById('columns'); cols.innerHTML='';
-  days.forEach((d,i)=>{
-    const key=fmtDate(d);
-    const dayTasks=tasks[key]||[];
-    const col=document.createElement('div');
-    col.className='col'+(isToday(d)?' today':'');
-    col.innerHTML=`
-      <div class="col-head">
-        <div class="day-name">${DAYS[i]}</div>
-        <div class="day-num">${d.getDate()}</div>
-      </div>
-      <div class="task-list" id="list-${key}"></div>
-      <button class="add-row" onclick="startInlineAdd('${key}')">+ add</button>`;
-    cols.appendChild(col);
-
-    const list=col.querySelector(`#list-${key}`);
-    dayTasks.forEach((task,ti)=>{
-      const row=document.createElement('div'); row.className='task-row';
-      const color=task.categories&&task.categories[0]?CAT_COLORS[task.categories[0]]||'#888':
-        'var(--border2)';
-      const isPushing=pendingSync.some(p=>p.notionUrl===task.notionUrl&&task.notionUrl);
-      row.innerHTML=`
-        <div class="cat-dot" style="background:${color}" title="${(task.categories||[]).join(', ')}"></div>
-        <div class="check${task.done?' done':''}${isPushing?' pushing':''}" onclick="toggleTask('${key}',${ti})"></div>
-        <span class="task-label${task.done?' done':''}">${escHtml(task.text)}</span>
-        ${task.fromNotion?'<span class="n-badge">N</span>':''}`;
-      list.appendChild(row);
-    });
-  });
-
-  renderSomeday();
-  renderOverdue();
-  updateBadge();
-}
-
-function startInlineAdd(key){
-  const list=document.getElementById('list-'+key);
-  const inp=document.createElement('input');
-  inp.className='inline-input'; inp.placeholder='Task name...';
-  inp.onkeydown=e=>{
-    if(e.key==='Enter'){ commitInlineAdd(key,inp.value); inp.remove(); }
-    if(e.key==='Escape') inp.remove();
-  };
-  inp.onblur=()=>{ if(inp.value.trim()) commitInlineAdd(key,inp.value); inp.remove(); };
-  list.appendChild(inp); inp.focus();
-}
-function commitInlineAdd(key,val){
-  const text=val.trim(); if(!text) return;
-  if(!tasks[key]) tasks[key]=[];
-  tasks[key].push({text,done:false,fromNotion:false,categories:[]});
-  saveAll(); render();
-}
-
-function toggleTask(key,idx){
-  if(!tasks[key]) return;
-  const task=tasks[key][idx];
-  task.done=!task.done;
-  if(task.fromNotion&&task.notionUrl){
-    const ei=pendingSync.findIndex(p=>p.notionUrl===task.notionUrl);
-    if(ei>-1) pendingSync.splice(ei,1);
-    else pendingSync.push({notionUrl:task.notionUrl,text:task.text,done:task.done});
+// ── INIT ──────────────────────────────────────────────────────────────
+function init(){
+  const st = localStorage.getItem('cc_tasks');
+  if(st){
+    tasks = JSON.parse(st);
+  } else {
+    tasks = EXAMPLE_TASKS.map(t=>({...t, dateKey: resolveKey(t.dateKey)}));
+    saveTasks();
   }
-  saveAll(); render();
-  if(task.fromNotion&&task.notionUrl) flushPending();
+  const sr = localStorage.getItem('cc_rundown');
+  if(sr) rundown = JSON.parse(sr);
+  else { rundown = EXAMPLE_RUNDOWN; saveRundown(); }
+
+  buildCatChips();
+  buildTargetChips();
+  renderMob();
+  renderDesk();
 }
 
-function renderSomeday(){
-  const c=document.getElementById('somedayChips'); c.innerHTML='';
-  somedayTasks.forEach((t,i)=>{
-    const el=document.createElement('div');
-    el.className='chip'+(t.done?' done':''); el.textContent=t.text;
-    el.onclick=()=>{somedayTasks[i].done=!somedayTasks[i].done;saveAll();render();};
-    c.appendChild(el);
+function saveTasks()  { localStorage.setItem('cc_tasks',   JSON.stringify(tasks));   }
+function saveRundown(){ localStorage.setItem('cc_rundown', JSON.stringify(rundown)); }
+
+// ── DATE UTILS ────────────────────────────────────────────────────────
+function today(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+function dayAt(n){ const d=today(); d.setDate(d.getDate()+n); return d; }
+function dKey(d){ return d.toISOString().slice(0,10); }
+function todayKey(){    return dKey(today()); }
+function tomorrowKey(){ return dKey(dayAt(1)); }
+function resolveKey(k){
+  if(k==='today')    return todayKey();
+  if(k==='tomorrow') return tomorrowKey();
+  return 'someday';
+}
+function fmtHeader(n){
+  const d = dayAt(n);
+  return d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}).toUpperCase();
+}
+function fmtSmall(d){
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase();
+}
+
+// ── MOBILE RENDER ─────────────────────────────────────────────────────
+function renderMob(){
+  renderMobHeader();
+  renderDayStrip();
+  renderMobTasks();
+}
+
+function renderMobHeader(){
+  const el = document.getElementById('mobDate');
+  el.textContent = mView === 'someday' ? 'SOMEDAY' : fmtHeader(mOffset);
+}
+
+function renderDayStrip(){
+  const el = document.getElementById('dayStrip');
+  let html = '';
+  for(let i=0; i<8; i++){
+    const d  = dayAt(i);
+    const m  = d.getMonth()+1;
+    const dy = d.getDate();
+    const wd = d.toLocaleDateString('en-US',{weekday:'short'}).toUpperCase();
+    const active = (mView==='today' && i===mOffset);
+    html += `<div class="day-pill ${active?'active':''}" onclick="goDay(${i})">
+      <div class="pill-wrap">
+        <div class="p-date">${m}/${dy}</div>
+        <div class="p-wd">${wd}</div>
+      </div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderMobTasks(){
+  const el = document.getElementById('mobScroll');
+  let key, list;
+  if(mView==='someday'){
+    key  = 'someday';
+    list = tasks.filter(t=>t.dateKey==='someday');
+  } else {
+    key  = dKey(dayAt(mOffset));
+    list = tasks.filter(t=>t.dateKey===key);
+  }
+
+  let html = '';
+  list.forEach(t=>{
+    html += `<div class="task-row ${t.done?'done':''}" onclick="toggle('${t.id}')">
+      <div class="task-check ${t.done?'done-check':'empty'}"></div>
+      <div class="task-text">${esc(t.text)}</div>
+    </div>`;
   });
-}
-function addSomeday(){
-  const inp=document.getElementById('somedayInput');
-  const text=inp.value.trim(); if(!text) return;
-  somedayTasks.push({text,done:false}); inp.value='';
-  saveAll(); render();
-}
-
-function renderOverdue(){
-  const banner=document.getElementById('overdueBanner');
-  const today=fmtDate(new Date()); let count=0;
-  Object.keys(tasks).forEach(k=>{if(k<today) count+=tasks[k].filter(t=>!t.done).length;});
-  if(count>0){banner.style.display='block';banner.textContent=`${count} overdue task${count>1?'s':''} from previous days`;}
-  else banner.style.display='none';
+  // inline add
+  html += `<div class="add-row">
+    <div class="add-row-check"></div>
+    <input class="add-row-input" placeholder="Add a task…" data-key="${key}" onkeydown="if(event.key==='Enter')quickAdd(this)" />
+  </div>`;
+  el.innerHTML = html;
 }
 
-function changeWeek(dir){weekOffset+=dir;render();}
-function goToday(){weekOffset=0;render();}
-
-async function callClaude(userPrompt){
-  if(!apiKey) throw new Error('No API key');
-  const res=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-beta':'mcp-client-2025-04-04'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,
-      messages:[{role:'user',content:userPrompt}],mcp_servers:MCP})
-  });
-  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'API error');}
-  const data=await res.json();
-  let text='';
-  (data.content||[]).forEach(b=>{
-    if(b.type==='text') text+=b.text;
-    if(b.type==='mcp_tool_result') text+=(b.content?.[0]?.text||'');
-  });
-  return text;
+function goDay(n){
+  mOffset = n;
+  mView   = 'today';
+  document.getElementById('tabToday').classList.add('active');
+  document.getElementById('tabSomeday').classList.remove('active');
+  renderMob();
 }
 
-async function flushPending(){
-  if(isSyncing||pendingSync.length===0) return;
-  setSyncing(true);
-  setStatus(`Pushing ${pendingSync.length} update${pendingSync.length>1?'s':''} to Notion...`,'');
-  const lines=pendingSync.map(p=>`- URL: ${p.notionUrl} | Mark: ${p.done?'Done':'Not started'}`).join('\n');
-  try{
-    await callClaude(`You have access to the Notion MCP server. Update each page's Status property:\n${lines}\nSet "Done" or "Not started" as specified. Return JSON: {"updated":number,"failed":number}`);
-    pendingSync=[]; saveAll(); render();
-    setStatus('Notion updated','ok');
-  }catch(e){setStatus('Push failed: '+e.message,'err');}
-  setSyncing(false);
+function mobTab(tab){
+  mView = tab;
+  document.getElementById('tabToday').classList.toggle('active',   tab==='today');
+  document.getElementById('tabSomeday').classList.toggle('active', tab==='someday');
+  renderMob();
 }
 
-async function syncAll(){
-  if(isSyncing) return;
-  setSyncing(true);
-  try{
-    if(pendingSync.length>0){
-      setStatus(`Pushing ${pendingSync.length} update${pendingSync.length>1?'s':''} to Notion...`,'');
-      const lines=pendingSync.map(p=>`- URL: ${p.notionUrl} | Mark: ${p.done?'Done':'Not started'}`).join('\n');
-      try{
-        await callClaude(`You have access to the Notion MCP server. Update each page's Status:\n${lines}\nReturn JSON: {"updated":number}`);
-        pendingSync=[];
-      }catch(e){setStatus('Warning: could not push updates','err');}
-    }
+// ── DESKTOP RENDER ────────────────────────────────────────────────────
+function renderDesk(){
+  const el = document.getElementById('deskCols');
+  let html = '';
+  for(let i=0; i<5; i++){
+    const d     = dayAt(dOffset + i);
+    const key   = dKey(d);
+    const isNow = key === todayKey();
+    const dName = d.toLocaleDateString('en-US',{weekday:'long'}).toUpperCase();
+    const small = fmtSmall(d);
+    const list  = tasks.filter(t=>t.dateKey===key);
 
-    setStatus('Pulling tasks from Notion...','');
-    const raw=await callClaude(`You have access to the Notion MCP server. Query the Task Database (data source: ${NOTION_DB}). Return all tasks where Due Date is set AND Status is NOT "Done". Return ONLY a raw JSON array, no markdown. Each object must have: { "text": string, "dueDate": "YYYY-MM-DD", "status": string, "categories": string[], "project": string|null, "notionUrl": string }. notionUrl must be the full notion.so page URL. If none, return [].`);
-    const s=raw.indexOf('['),e=raw.lastIndexOf(']');
-    if(s===-1||e===-1) throw new Error('No data returned from Notion');
-    const fetched=JSON.parse(raw.substring(s,e+1));
-
-    let added=0,updated=0;
-    fetched.forEach(nt=>{
-      if(!nt.dueDate) return;
-      const key=nt.dueDate;
-      if(!tasks[key]) tasks[key]=[];
-      const ei=tasks[key].findIndex(t=>t.notionUrl===nt.notionUrl&&nt.notionUrl);
-      if(ei>-1){
-        tasks[key][ei].done=nt.status==='Done';
-        tasks[key][ei].categories=nt.categories||[];
-        updated++;
-      } else {
-        tasks[key].push({text:nt.text,done:nt.status==='Done',fromNotion:true,
-          categories:nt.categories||[],project:nt.project||null,notionUrl:nt.notionUrl});
-        added++;
-      }
+    html += `<div class="dcol ${isNow?'is-today':''}" data-key="${key}">
+      <div class="dcol-head">
+        <div class="dcol-small">${small}</div>
+        <div class="dcol-name">${dName}</div>
+      </div>
+      <div class="dcol-tasks">`;
+    list.forEach(t=>{
+      html += `<div class="dtask ${t.done?'done':''}" onclick="toggle('${t.id}')">${esc(t.text)}</div>`;
     });
-
-    saveAll(); render();
-    setStatus(`Synced: ${added} new, ${updated} updated`,'ok');
-  }catch(e){setStatus('Sync error: '+e.message,'err');}
-  setSyncing(false);
+    html += `</div>
+      <input class="dcol-input" placeholder="Add a task…" data-key="${key}" onkeydown="if(event.key==='Enter')quickAdd(this)" />
+    </div>`;
+  }
+  el.innerHTML = html;
+  renderRundown();
 }
 
-// Boot
-loadAll();
-if(apiKey) showApp();
-else document.getElementById('setupScreen').style.display='flex';
+function dNav(n){ dOffset += n; renderDesk(); }
+function dJump(n){ dOffset += n; renderDesk(); }
+
+// ── RUNDOWN ───────────────────────────────────────────────────────────
+function renderRundown(){
+  const el    = document.getElementById('rdLists');
+  const count = document.getElementById('rdCount');
+  let total = 0, html = '';
+  rundown.forEach(list=>{
+    total += list.items.length;
+    html += `<div class="rl-col">
+      <div class="rl-title">${esc(list.title)}</div>`;
+    list.items.forEach(item=>{
+      const cls = [item.bold?'bold':'', item.muted?'muted':''].filter(Boolean).join(' ');
+      html += `<div class="rl-item ${cls}">${esc(item.text)}</div>`;
+    });
+    html += `<input class="rl-addinput" placeholder="+ Add item" data-lid="${list.id}"
+               onkeydown="if(event.key==='Enter')addRdItem(this)" />
+    </div>`;
+  });
+  html += `<button class="rl-newbtn" onclick="addRdList()">+ New List</button>`;
+  el.innerHTML = html;
+  count.textContent = total;
+}
+
+function toggleRd(){
+  const el = document.getElementById('rdLists');
+  el.style.display = el.style.display==='none' ? '' : 'none';
+}
+
+function addRdItem(input){
+  const text = input.value.trim();
+  if(!text) return;
+  const list = rundown.find(l=>l.id===input.dataset.lid);
+  if(list){ list.items.push({id:'ri'+Date.now(), text}); saveRundown(); renderRundown(); }
+  input.value='';
+}
+
+function addRdList(){
+  const name = prompt('List name:');
+  if(!name) return;
+  rundown.push({id:'rl'+Date.now(), title:name.toUpperCase(), items:[]});
+  saveRundown(); renderRundown();
+}
+
+// ── TASKS ─────────────────────────────────────────────────────────────
+function toggle(id){
+  const t = tasks.find(t=>t.id===id);
+  if(t){ t.done=!t.done; saveTasks(); renderMob(); renderDesk(); }
+}
+
+function quickAdd(input){
+  const text = input.value.trim();
+  if(!text) return;
+  tasks.push({id:'t'+Date.now(), text, cat:selCat, dateKey:input.dataset.key, done:false});
+  input.value='';
+  saveTasks(); renderMob(); renderDesk();
+}
+
+// ── ADD MODAL ─────────────────────────────────────────────────────────
+function buildCatChips(){
+  document.getElementById('catChips').innerHTML = CATS.map((c,i)=>
+    `<button class="chip ${i===0?'sel':''}" data-c="${c}" onclick="pickCat('${c}')">${c}</button>`
+  ).join('');
+}
+function pickCat(c){
+  selCat = c;
+  document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.toggle('sel',b.dataset.c===c));
+}
+
+function buildTargetChips(){
+  document.querySelectorAll('#targetChips .chip').forEach(b=>{
+    b.addEventListener('click',()=>{
+      selTarget = b.dataset.t;
+      document.querySelectorAll('#targetChips .chip').forEach(x=>x.classList.remove('sel'));
+      b.classList.add('sel');
+    });
+  });
+}
+
+function openAddModal(){
+  document.getElementById('addModal').classList.add('open');
+  setTimeout(()=>document.getElementById('addInp').focus(),280);
+}
+function addModalOutside(e){
+  if(e.target===document.getElementById('addModal')) document.getElementById('addModal').classList.remove('open');
+}
+function stopProp(e){ e.stopPropagation(); }
+
+function submitAdd(){
+  const text = document.getElementById('addInp').value.trim();
+  if(!text) return;
+  const key = resolveKey(selTarget);
+  tasks.push({id:'t'+Date.now(), text, cat:selCat, dateKey:key, done:false});
+  document.getElementById('addInp').value='';
+  document.getElementById('addModal').classList.remove('open');
+  saveTasks();
+  if(selTarget==='someday'){ mView='someday'; }
+  else { mView='today'; mOffset = selTarget==='tomorrow'?1:0; }
+  renderMob(); renderDesk();
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────────
+function openSettings()  { document.getElementById('sOverlay').classList.add('open'); }
+function closeSettings() { document.getElementById('sOverlay').classList.remove('open'); }
+function overlayClose(e) { if(e.target===document.getElementById('sOverlay')) closeSettings(); }
+
+function doSync(){
+  closeSettings();
+  if(!localStorage.getItem('cc_apikey')){ openApiModal(); return; }
+  alert('Notion sync coming soon!');
+}
+function doExport(){
+  closeSettings();
+  const b = new Blob([JSON.stringify({tasks,rundown},null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download='cardiac-core.json'; a.click();
+}
+function doLoadExamples(){
+  closeSettings();
+  if(!confirm('Replace current tasks with example tasks?')) return;
+  tasks   = EXAMPLE_TASKS.map(t=>({...t, dateKey:resolveKey(t.dateKey)}));
+  rundown = EXAMPLE_RUNDOWN;
+  saveTasks(); saveRundown(); renderMob(); renderDesk();
+}
+function doManageKey(){ closeSettings(); openApiModal(); }
+function doClear(){
+  closeSettings();
+  if(!confirm('Clear all tasks?')) return;
+  tasks=[]; saveTasks(); renderMob(); renderDesk();
+}
+
+// ── API KEY ───────────────────────────────────────────────────────────
+function openApiModal(){
+  document.getElementById('apiInp').value = localStorage.getItem('cc_apikey')||'';
+  document.getElementById('apiModal').classList.remove('hidden');
+}
+function closeApiModal(){ document.getElementById('apiModal').classList.add('hidden'); }
+function saveApiKey(){
+  const v = document.getElementById('apiInp').value.trim();
+  if(v) localStorage.setItem('cc_apikey',v);
+  closeApiModal();
+}
+
+// ── UTIL ──────────────────────────────────────────────────────────────
+function esc(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── GO ────────────────────────────────────────────────────────────────
+init();
 </script>
 </body>
 </html>
