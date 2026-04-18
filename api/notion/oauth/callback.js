@@ -13,43 +13,49 @@ module.exports = async function handler(req, res) {
   const redirectUri = `${appUrl}/api/notion/oauth/callback`;
 
   if (error) {
-    return res.redirect(`${appUrl}/?error=${encodeURIComponent(error)}&state=${encodeURIComponent(state || '')}`);
+    return res.redirect(`${appUrl}/?error=${encodeURIComponent(error)}`);
   }
 
   const expectedState = getStateCookie(req);
   if (!code || !state || !expectedState || state !== expectedState) {
+    clearStateCookie(res);
     return res.redirect(`${appUrl}/?error=${encodeURIComponent('invalid_state')}`);
   }
 
-  const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-  const response = await fetch('https://api.notion.com/v1/oauth/token', {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${basic}`,
-      'Notion-Version': '2026-03-11',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: redirectUri
-    })
-  });
+  try {
+    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const response = await fetch('https://api.notion.com/v1/oauth/token', {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${basic}`,
+        'Notion-Version': '2026-03-11',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri
+      })
+    });
 
-  const data = await response.json().catch(() => ({}));
+    const data = await response.json().catch(() => ({}));
 
-  if (!response.ok) {
-    return res.redirect(`${appUrl}/?error=${encodeURIComponent(data.message || 'oauth_exchange_failed')}`);
+    if (!response.ok || !data.access_token) {
+      clearStateCookie(res);
+      return res.redirect(`${appUrl}/?error=${encodeURIComponent(data.message || 'oauth_exchange_failed')}`);
+    }
+
+    setAuthCookie(res, {
+      access_token: data.access_token,
+      workspace_id: data.workspace_id || null,
+      workspace_name: data.workspace_name || null,
+      owner: data.owner || null
+    });
+    clearStateCookie(res);
+
+    return res.redirect(`${appUrl}/?notion_connected=1`);
+  } catch (err) {
+    clearStateCookie(res);
+    return res.redirect(`${appUrl}/?error=${encodeURIComponent(err.message || 'oauth_callback_failed')}`);
   }
-
-  setAuthCookie(res, {
-    access_token: data.access_token,
-    refresh_token: data.refresh_token || null,
-    workspace_id: data.workspace_id || null,
-    workspace_name: data.workspace_name || null,
-    owner: data.owner || null
-  });
-  clearStateCookie(res);
-
-  return res.redirect(`${appUrl}/?notion_connected=1&state=${encodeURIComponent(state)}`);
 };
