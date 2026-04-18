@@ -1,107 +1,2496 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Cardiac Core</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardiac Core</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0a0a0a;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #0a0a0a;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --accent-green: #00ff66;
+            --accent-green-dark: #00cc52;
+            --border-color: #333333;
+            --task-bg: #252525;
+        }
 
-    .card {
-      background: #1a1a1a;
-      padding: 30px;
-      border-radius: 10px;
-      text-align: center;
-      width: 320px;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
 
-    button {
-      padding: 12px 18px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      margin-top: 15px;
-    }
+        /* Header */
+        .header {
+            background: var(--bg-primary);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
 
-    .connect {
-      background: #00ff66;
-      color: black;
-    }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
 
-    .status {
-      margin-top: 15px;
-      font-size: 14px;
-      color: #888;
-    }
-  </style>
+        .date-display {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 24px;
+            padding: 4px;
+        }
+
+        .mobile-view {
+            display: block;
+            padding: 0;
+            overflow-y: auto;
+            height: calc(100vh - 110px); /* header + day nav */
+            padding-bottom: 20px;
+        }
+
+        .day-column {
+            background: var(--bg-secondary);
+            min-height: calc(100vh - 200px);
+            padding: 20px;
+        }
+
+        .day-header {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-bottom: 100px;
+        }
+
+        .task-item {
+            background: var(--task-bg);
+            border-left: 3px solid var(--accent-green);
+            padding: 14px 16px;
+            border-radius: 4px;
+            font-size: 15px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.2s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .task-item:active {
+            background: #2a2a2a;
+        }
+
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent-green);
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+
+        .task-checkbox.checked {
+            background: var(--accent-green);
+            position: relative;
+        }
+
+        .task-checkbox.checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--bg-primary);
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .task-text {
+            flex: 1;
+            line-height: 1.4;
+        }
+
+        .task-text.completed {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+
+        .task-category {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .category-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Drag and drop styles */
+        .task-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .task-item.drag-over {
+            border-top: 2px solid var(--accent-green);
+        }
+
+        .task-item {
+            cursor: grab;
+        }
+
+        .task-item:active {
+            cursor: grabbing;
+        }
+
+        /* Desktop: Week View */
+        .desktop-view {
+            display: none;
+            padding: 24px;
+            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            background: var(--accent-green);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 12px 20px;
+            border-top: 1px solid var(--accent-green-dark);
+        }
+
+        .nav-item {
+            background: none;
+            border: none;
+            color: var(--bg-primary);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background 0.2s ease;
+        }
+
+        .nav-item.active {
+            background: var(--bg-primary);
+            color: var(--accent-green);
+        }
+
+        .nav-item:active {
+            opacity: 0.8;
+        }
+
+        .add-task-btn {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-primary);
+            border: none;
+            border-radius: 50%;
+            color: var(--accent-green);
+            font-size: 28px;
+            font-weight: 300;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .add-task-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Day Navigation (mobile) */
+        .day-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .day-nav button {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .current-day {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Add task input */
+        .add-task-input {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            right: 20px;
+            background: var(--task-bg);
+            border: 2px solid var(--accent-green);
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 15px;
+            color: var(--text-primary);
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        .add-task-input:focus {
+            outline: none;
+        }
+
+        .add-task-input.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        /* Responsive: Desktop */
+        @media (min-width: 768px) {
+            .mobile-view {
+                display: none;
+            }
+
+            .desktop-view {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                max-width: 1400px;
+                margin: 0 auto;
+                padding-bottom: 80px;
+            }
+
+            .day-column {
+                background: var(--bg-primary);
+                border-radius: 8px;
+                padding: 20px;
+                min-height: 400px;
+            }
+
+            .bottom-nav {
+                padding: 16px 24px;
+            }
+
+            .add-task-input {
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 400px;
+            }
+        }
+
+        /* Category Board View (Tasks Tab) */
+        .category-board {
+            display: none;
+            padding: 20px;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 100px;
+        }
+
+        .category-board.active {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        /* Horizontal scroll: one row, columns side by side */
+        .category-board.active.layout-horizontal {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 100px;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+        }
+
+        .category-board.active.layout-horizontal .category-column {
+            min-width: 280px;
+            max-width: 280px;
+            flex-shrink: 0;
+            scroll-snap-align: start;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        /* Layout toggle button */
+        .layout-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: none;
+        }
+
+        .layout-toggle.visible { display: block; }
+        .layout-toggle.active-layout {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .category-column {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 200px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .category-title {
+            font-size: 14px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .category-count {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .category-tasks {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .category-task-item {
+            background: var(--task-bg);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: grab;
+            border-left: 3px solid;
+            transition: background 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-task-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 6px;
+        }
+
+        .category-swipe-delete {
+            position: absolute;
+            right: 0; top: 0; bottom: 0; width: 80px;
+            background: #E24B4A;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 600;
+            color: white; text-transform: uppercase;
+            letter-spacing: 0.5px; opacity: 0;
+            transition: opacity 0.15s ease;
+            pointer-events: none; gap: 4px;
+        }
+
+        .category-task-wrapper.swiping .category-swipe-delete { opacity: 1; }
+        .category-task-wrapper.swiping .category-task-item { transform: translateX(var(--swipe-x, 0px)); }
+        .category-task-wrapper.swipe-out .category-task-item {
+            transform: translateX(-110%);
+            transition: transform 0.25s ease;
+        }
+
+        .category-task-item:active {
+            cursor: grabbing;
+            background: #2a2a2a;
+        }
+
+        .category-task-item.dragging {
+            opacity: 0.5;
+        }
+
+        /* Swipe to unschedule */
+        .task-item-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+            margin-bottom: 0;
+        }
+
+        .task-swipe-action {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            background: #E24B4A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            pointer-events: none;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .task-swipe-action .swipe-icon {
+            font-size: 16px;
+        }
+
+        .task-item-wrapper .task-item {
+            transition: transform 0.2s ease;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 0;
+        }
+
+        .task-item-wrapper.swiping .task-swipe-action {
+            opacity: 1;
+        }
+
+        .task-item-wrapper.swipe-complete .task-item {
+            transform: translateX(-100%);
+            transition: transform 0.25s ease;
+        }
+
+        .drag-handle {
+            color: var(--text-secondary);
+            font-size: 18px;
+            padding: 0 4px 0 10px;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            flex-shrink: 0;
+            opacity: 0.4;
+        }
+        .drag-handle:active { cursor: grabbing; opacity: 0.8; }
+
+        .task-item-wrapper.drag-over .task-item {
+            border-top: 2px solid var(--accent-green);
+        }
+
+        .task-swipe-done {
+            position: absolute;
+            left: 0; top: 0; bottom: 0; width: 80px;
+            background: var(--accent-green);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 4px; opacity: 0;
+            font-size: 11px; font-weight: 600;
+            color: var(--bg-primary);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            transition: opacity 0.15s ease;
+            pointer-events: none;
+        }
+        .task-item-wrapper.swiping-right .task-swipe-done { opacity: 1; }
+        .task-item-wrapper.swipe-complete-right .task-item {
+            transform: translateX(100%);
+            transition: transform 0.25s ease;
+        }
+
+        /* Pull to refresh */
+        .pull-indicator {
+            text-align: center;
+            padding: 0;
+            font-size: 12px;
+            color: var(--accent-green);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease, padding 0.2s ease;
+        }
+        .pull-indicator.visible {
+            max-height: 48px;
+            padding: 14px 0;
+        }
+
+        /* Edit task modal */
+        .edit-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 400;
+        }
+        .edit-modal-overlay.visible { display: flex; }
+        .edit-modal {
+            background: var(--bg-primary);
+            border-radius: 16px 16px 0 0;
+            padding: 24px 20px 40px;
+            width: 100%;
+            max-width: 600px;
+        }
+        .edit-modal-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        .edit-modal input {
+            width: 100%;
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 15px;
+            margin-bottom: 16px;
+        }
+        .edit-modal input:focus { outline: none; border-color: var(--accent-green); }
+        .category-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .category-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 2px solid transparent;
+            opacity: 0.6;
+            transition: opacity 0.15s, border-color 0.15s;
+        }
+        .category-chip.selected { opacity: 1; border-color: white; }
+        .edit-modal-actions {
+            display: flex; gap: 10px;
+        }
+        .edit-modal-actions button {
+            flex: 1; padding: 13px;
+            border-radius: 8px;
+            font-size: 14px; font-weight: 600;
+            cursor: pointer; border: none;
+        }
+        .btn-save { background: var(--accent-green); color: var(--bg-primary); }
+        .btn-delete { background: #E24B4A22; color: #E24B4A; }
+
+        /* Long-press day picker */
+        .longpress-picker-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 400;
+        }
+        .longpress-picker-overlay.visible { display: flex; }
+        .longpress-picker {
+            background: var(--bg-primary);
+            border-radius: 16px 16px 0 0;
+            padding: 20px 20px 40px;
+            width: 100%;
+            max-width: 600px;
+        }
+        .longpress-picker-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        .longpress-picker-task {
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .day-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .day-chip {
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        .day-chip:active { background: var(--accent-green); color: var(--bg-primary); }
+        .date-picker-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 8px;
+            display: none;
+            z-index: 150;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            min-width: 200px;
+        }
+
+        .date-picker-dropdown.visible {
+            display: block;
+        }
+
+        .date-picker-item {
+            padding: 10px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .date-picker-item:hover {
+            background: var(--task-bg);
+        }
+
+        .date-picker-item.active {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            font-weight: 600;
+        }
+
+        .date-picker-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 8px 0;
+        }
+
+        .day-nav {
+            position: relative;
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            background: var(--bg-primary);
+            border-left: 1px solid var(--border-color);
+            transition: right 0.3s ease;
+            z-index: 200;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .settings-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .setting-item {
+            margin-bottom: 20px;
+        }
+
+        .setting-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .setting-button {
+            width: 100%;
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .setting-button:hover {
+            background: #2a2a2a;
+        }
+
+        .setting-button.accent {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border: none;
+            font-weight: 600;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            padding: 20px;
+        }
+
+        .modal.visible {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .modal-input {
+            width: 100%;
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-button:active {
+            opacity: 0.8;
+        }
+
+        .modal-button.cancel {
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .modal-button.confirm {
+            background: var(--accent-green);
+            border: none;
+            color: var(--bg-primary);
+            font-weight: 600;
+        }
+
+        /* Light mode */
+        body.light-mode {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text-primary: #111111;
+            --text-secondary: #666666;
+            --border-color: #dddddd;
+            --task-bg: #f0f0f0;
+        }
+
+        /* Settings controls */
+        .setting-select {
+            width: 100%;
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .setting-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .toggle-switch {
+            width: 44px;
+            height: 24px;
+            background: var(--border-color);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch.on { background: var(--accent-green); }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.2s ease;
+        }
+
+        .toggle-switch.on::after { transform: translateX(20px); }
+
+        .font-size-options {
+            display: flex;
+            gap: 8px;
+        }
+
+        .font-size-btn {
+            flex: 1;
+            padding: 10px;
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        .font-size-btn.active {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border-color: var(--accent-green);
+        }
+
+        .category-order-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 4px 0;
+        }
+
+        .category-order-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 15px;
+            font-weight: 500;
+            user-select: none;
+            transition: background 0.15s, box-shadow 0.15s;
+        }
+
+        .category-order-item.drag-over {
+            border-color: var(--accent-green);
+            background: rgba(0,255,102,0.06);
+        }
+
+        .category-order-item .order-dot {
+            width: 12px; height: 12px;
+            border-radius: 50%; flex-shrink: 0;
+        }
+
+        .category-order-item .order-handle {
+            margin-left: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 4px 6px;
+            cursor: grab;
+            opacity: 0.5;
+        }
+
+        .category-order-item .order-handle span {
+            display: block;
+            width: 22px;
+            height: 3px;
+            background: var(--text-secondary);
+            border-radius: 2px;
+        }
+
+        .category-order-item .order-handle:active { cursor: grabbing; }
+
+        /* Category order modal */
+        .cat-order-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 500;
+        }
+
+        .cat-order-modal-overlay.visible { display: flex; }
+
+        .cat-order-modal {
+            background: var(--bg-primary);
+            border-radius: 20px 20px 0 0;
+            padding: 24px 20px 40px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .cat-order-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .cat-order-modal-title {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .cat-order-done-btn {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
 </head>
-
 <body>
-
-  <div class="card">
-    <h2>Cardiac Core</h2>
-
-    <button class="connect" onclick="connectNotionOAuth()">
-      Connect with Notion
-    </button>
-
-    <div class="status" id="statusText">
-      Not connected
+    <!-- Header -->
+    <div class="header">
+        <div class="header-top">
+            <div class="date-display">CARDIAC CORE</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button class="layout-toggle" id="layoutToggle" onclick="toggleBoardLayout()" title="Toggle layout">⊟</button>
+                <button class="menu-btn" onclick="toggleSettings()">☰</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    async function connectNotionOAuth() {
-      try {
-        const state = crypto.randomUUID();
-        sessionStorage.setItem('notion_oauth_state', state);
+    <!-- Day Navigation (Mobile) -->
+    <div class="day-nav">
+        <button onclick="changeDay(-1)">←</button>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer;" onclick="toggleDatePicker()">
+            <div class="current-day" id="currentDay">TODAY</div>
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;" id="dateDisplay">Friday, April 17</div>
+        </div>
+        <button onclick="changeDay(1)">→</button>
+        
+        <!-- Date Picker Dropdown -->
+        <div class="date-picker-dropdown" id="datePicker">
+            <!-- Will be populated by JavaScript -->
+        </div>
+    </div>
 
-        const res = await fetch(`/api/notion/auth-url?state=${state}`);
-        const data = await res.json();
+    <!-- Mobile View -->
+    <div class="mobile-view">
+        <div id="pullIndicator" class="pull-indicator">↓ Release to sync Notion</div>
+        <div class="day-column">
+            <div class="task-list" id="mobileTaskList"></div>
+        </div>
+    </div>
 
-        console.log("Auth response:", data);
+    <!-- Edit Task Modal -->
+    <div class="edit-modal-overlay" id="editModal">
+        <div class="edit-modal">
+            <div class="edit-modal-title">Edit Task</div>
+            <input type="text" id="editTaskInput" placeholder="Task name..." />
+            <div class="edit-modal-title">Category</div>
+            <div class="category-grid" id="editCategoryGrid"></div>
+            <div class="edit-modal-actions">
+                <button class="btn-delete" onclick="deleteEditingTask()">Delete</button>
+                <button class="btn-save" onclick="saveEditingTask()">Save</button>
+            </div>
+        </div>
+    </div>
 
-        if (!data.url) {
-          throw new Error("No auth URL returned");
-        }
+    <!-- Long-press Day Picker -->
+    <div class="longpress-picker-overlay" id="longpressPicker">
+        <div class="longpress-picker">
+            <div class="longpress-picker-title">Move to day</div>
+            <div class="longpress-picker-task" id="longpressTaskName"></div>
+            <div class="day-chips" id="dayChips"></div>
+        </div>
+    </div>
 
-        // 🔥 THIS is what triggers redirect to Notion
-        window.location.href = data.url;
+    <!-- Category Order Modal -->
+    <div class="cat-order-modal-overlay" id="catOrderModal">
+        <div class="cat-order-modal">
+            <div class="cat-order-modal-header">
+                <div class="cat-order-modal-title">Category Order</div>
+                <button class="cat-order-done-btn" onclick="closeCategoryOrderModal()">Done</button>
+            </div>
+            <div class="category-order-list" id="categoryOrderList"></div>
+        </div>
+    </div>
 
-      } catch (err) {
-        console.error("OAuth error:", err);
-        alert("Notion connection failed:\n\n" + err.message);
-      }
-    }
+    <!-- Category Board View (Tasks Tab) -->
+    <div class="category-board" id="categoryBoard">
+        <!-- Category columns will be inserted here -->
+    </div>
 
-    // Optional: check connection status
-    async function checkStatus() {
-      try {
-        const res = await fetch('/api/notion/status');
-        const data = await res.json();
+    <!-- Desktop View -->
+    <div class="desktop-view" id="desktopView">
+        <!-- Day columns will be inserted here -->
+    </div>
 
-        if (data.connected) {
-          document.getElementById('statusText').innerText = "Connected ✅";
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="switchView('today')">TODAY</button>
+        <button class="add-task-btn" onclick="showAddTask()">+</button>
+        <button class="nav-item" onclick="switchView('tasks')">TASKS</button>
+    </div>
+
+    <!-- Add Task Input -->
+    <input type="text" class="add-task-input" id="addTaskInput" placeholder="Add a task..." />
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <div class="settings-title">Settings</div>
+            <button class="close-btn" onclick="toggleSettings()">×</button>
+        </div>
+
+        <!-- Dark / Light Mode -->
+        <div class="setting-item">
+            <div class="setting-toggle">
+                <div class="setting-label" style="margin-bottom:0;">Light Mode</div>
+                <div class="toggle-switch" id="lightModeToggle" onclick="toggleLightMode()"></div>
+            </div>
+        </div>
+
+        <!-- Font Size -->
+        <div class="setting-item">
+            <div class="setting-label">Font Size</div>
+            <div class="font-size-options">
+                <button class="font-size-btn" id="font-small" onclick="setFontSize('small')">A</button>
+                <button class="font-size-btn active" id="font-medium" onclick="setFontSize('medium')" style="font-size:16px;">A</button>
+                <button class="font-size-btn" id="font-large" onclick="setFontSize('large')" style="font-size:20px;">A</button>
+            </div>
+        </div>
+
+        <!-- Default Category -->
+        <div class="setting-item">
+            <div class="setting-label">Default Category</div>
+            <select class="setting-select" id="defaultCategorySelect" onchange="saveDefaultCategory(this.value)">
+            </select>
+        </div>
+
+        <!-- Category Order -->
+        <div class="setting-item">
+            <div class="setting-label">Category Order</div>
+            <button class="setting-button" onclick="openCategoryOrderModal()">Reorder Categories</button>
+        </div>
+
+        <!-- Notion Sync -->
+        <div class="setting-item">
+            <div class="setting-label">Notion Sync</div>
+            <button class="setting-button accent" data-sync-notion onclick="syncNotion(this)">Sync with Notion</button>
+        </div>
+
+        <!-- Notion Connection -->
+        <div class="setting-item">
+            <div class="setting-label">Notion Connection</div>
+            <button class="setting-button" onclick="manageNotionConfig()">Connect Notion</button>
+        </div>
+
+        <!-- Data -->
+        <div class="setting-item">
+            <div class="setting-label">Data</div>
+            <button class="setting-button" onclick="exportTasks()">Export Tasks</button>
+        </div>
+        <div class="setting-item">
+            <button class="setting-button" onclick="loadExampleTasks()">Load Example Tasks</button>
+        </div>
+    </div>
+
+    <!-- Notion Config Modal -->
+    <div class="modal" id="notionConfigModal">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-title">Connect Notion</div>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.45;">
+                Connect your own Notion workspace with OAuth, then save the ID of the task database or data source you want this app to sync.
+            </p>
+            <div id="notionConnectionStatus" style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;"></div>
+            <input type="text" class="modal-input" id="notionDataSourceInput" placeholder="Data source ID or database ID" />
+            <input type="text" class="modal-input" id="notionTitlePropInput" placeholder="Title property name (default: Task)" />
+            <input type="text" class="modal-input" id="notionStatusPropInput" placeholder="Status property name (default: Status)" />
+            <input type="text" class="modal-input" id="notionDuePropInput" placeholder="Due date property name (default: Due Date)" />
+            <input type="text" class="modal-input" id="notionCategoryPropInput" placeholder="Category property name (default: Category)" />
+            <div class="modal-buttons" style="flex-wrap: wrap;">
+                <button class="modal-button cancel" onclick="disconnectNotion()" style="flex:1 1 30%;">Disconnect</button>
+                <button class="modal-button cancel" onclick="closeNotionConfigModal()" style="flex:1 1 30%;">Close</button>
+                <button class="modal-button confirm" onclick="saveNotionWorkspaceConfig()" style="flex:1 1 30%;">Save Settings</button>
+            </div>
+            <div class="modal-buttons" style="margin-top:12px;">
+                <button class="modal-button confirm" onclick="connectNotionOAuth()" style="width:100%;">Connect with Notion</button>
+            </div>
+        </div>
+    </div></div>
+
+    <script>
+        // Notion category color mapping
+        const categoryColors = {
+            'Brain Dump': '#888780',    // Gray — uncategorized
+            'Personal': '#378ADD',      // Blue
+            'Cardiac': '#d4537e',       // Pink
+            'Benefits Board': '#EF9F27', // Amber/Orange
+            'Property Management': '#639922', // Green
+            'Estate': '#BA7517',        // Amber
+            'Acquisitions': '#7F77DD',  // Purple
+            'Growth': '#1D9E75',        // Teal
+            'Research': '#888780'       // Gray
+        };
+
+        // State
+        let currentDayOffset = 0;
+        let notionSyncEnabled = false;
+        let draggedTaskId = null;
+        
+        // Initialize tasks with examples if localStorage is empty or doesn't exist
+        let tasks;
+        const savedTasks = localStorage.getItem('cardiacTasks');
+        if (!savedTasks || savedTasks === '[]') {
+            tasks = [
+                {
+                    id: 1,
+                    text: 'Send art and Gayla email update',
+                    completed: false,
+                    dayOffset: 0,
+                    category: 'Personal',
+                    order: 0,
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: 2,
+                    text: 'Call Aaron',
+                    completed: false,
+                    dayOffset: 0,
+                    category: 'Personal',
+                    order: 1,
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: 3,
+                    text: 'Message Aptive',
+                    completed: false,
+                    dayOffset: 0,
+                    category: 'Property Management',
+                    order: 2,
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: 4,
+                    text: 'Buy mom iPad',
+                    completed: false,
+                    dayOffset: 0,
+                    category: 'Personal',
+                    order: 3,
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: 5,
+                    text: 'Review Q1 financials',
+                    completed: false,
+                    dayOffset: 1,
+                    category: 'Cardiac',
+                    order: 0,
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: 6,
+                    text: 'Benefits board meeting prep',
+                    completed: false,
+                    dayOffset: 1,
+                    category: 'Benefits Board',
+                    order: 1,
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: 7,
+                    text: 'Research CRM options',
+                    completed: false,
+                    dayOffset: 999,
+                    category: 'Research',
+                    order: 0,
+                    createdAt: new Date().toISOString()
+                }
+            ];
+            // Save the example tasks
+            localStorage.setItem('cardiacTasks', JSON.stringify(tasks));
         } else {
-          document.getElementById('statusText').innerText = "Not connected";
+            tasks = JSON.parse(savedTasks);
         }
-      } catch (e) {
-        console.error(e);
-      }
-    }
+        
+        let currentView = 'mobile';
+        
+        // Check if Notion sync was previously enabled
+        notionSyncEnabled = !!getNotionConfig();
 
-    checkStatus();
-  </script>
+        // Initialize
+        function init() {
+            // Apply saved preferences
+            if (localStorage.getItem('lightMode') === '1') {
+                document.body.classList.add('light-mode');
+            }
+            const savedSize = localStorage.getItem('fontSize');
+            if (savedSize) setFontSize(savedSize);
 
+            rolloverOverdueTasks();
+            updateDateDisplay();
+            renderTasks();
+            initPullToRefresh();
+            
+            // Handle add task input
+            const addTaskInput = document.getElementById('addTaskInput');
+            addTaskInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && addTaskInput.value.trim()) {
+                    addTask(addTaskInput.value.trim());
+                    addTaskInput.value = '';
+                    addTaskInput.classList.remove('visible');
+                }
+            });
+
+            // Handle click outside to close
+            addTaskInput.addEventListener('blur', () => {
+                setTimeout(() => addTaskInput.classList.remove('visible'), 200);
+            });
+        }
+
+        function updateDateDisplay() {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            const date = new Date();
+            date.setDate(date.getDate() + currentDayOffset);
+            
+            const dayName = days[date.getDay()];
+            const monthName = months[date.getMonth()];
+            const dayNum = date.getDate();
+            
+            let label, subLabel;
+            
+            if (currentDayOffset === 0) {
+                label = 'TODAY';
+                subLabel = `${dayName}, ${monthName} ${dayNum}`;
+            } else if (currentDayOffset === -1) {
+                label = 'YESTERDAY';
+                subLabel = `${dayName}, ${monthName} ${dayNum}`;
+            } else if (currentDayOffset === 1) {
+                label = 'TOMORROW';
+                subLabel = `${dayName}, ${monthName} ${dayNum}`;
+            } else {
+                label = dayName.toUpperCase();
+                subLabel = `${monthName} ${dayNum}`;  // No day name — already in the label
+            }
+            
+            document.getElementById('currentDay').textContent = label;
+            document.getElementById('dateDisplay').textContent = subLabel;
+        }
+
+        function changeDay(offset) {
+            currentDayOffset += offset;
+            updateDateDisplay();
+            renderTasks();
+        }
+
+        function addTask(text) {
+            // Get the highest order number for this day
+            const dayTasks = tasks.filter(t => t.dayOffset === currentDayOffset);
+            const maxOrder = dayTasks.length > 0 
+                ? Math.max(...dayTasks.map(t => t.order || 0))
+                : -1;
+
+            const task = {
+                id: Date.now(),
+                text: text,
+                completed: false,
+                dayOffset: currentDayOffset,
+                category: getDefaultCategory(),
+                order: maxOrder + 1,
+                createdAt: new Date().toISOString()
+            };
+            tasks.push(task);
+            saveTasks();
+            renderTasks();
+            
+            // Sync to Notion if enabled
+            if (notionSyncEnabled) {
+                syncTaskToNotion(task, 'create');
+            }
+        }
+
+        function toggleTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                saveTasks();
+                renderTasks();
+                
+                // Sync to Notion if enabled
+                if (notionSyncEnabled) {
+                    syncTaskToNotion(task, 'update');
+                }
+            }
+        }
+
+        async function deleteTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+
+            if (task && notionSyncEnabled) {
+                try {
+                    await syncTaskToNotion(task, 'delete');
+                } catch (error) {
+                    console.error('Failed to delete task in Notion:', error);
+                }
+            }
+
+            tasks = tasks.filter(t => t.id !== taskId);
+            saveTasks();
+            renderTasks();
+        }
+
+        function saveTasks() {
+            localStorage.setItem('cardiacTasks', JSON.stringify(tasks));
+        }
+
+        function renderTasks() {
+            const mobileList = document.getElementById('mobileTaskList');
+            const currentDayTasks = tasks
+                .filter(t => t.dayOffset === currentDayOffset)
+                .sort((a, b) => (a.order || 0) - (b.order || 0));
+            
+            mobileList.innerHTML = currentDayTasks.map((task, index) => {
+                const categoryColor = categoryColors[task.category] || '#888780';
+                return `
+                <div class="task-item-wrapper" data-task-id="${task.id}">
+                    <div class="task-swipe-done">✓ DONE</div>
+                    <div class="task-swipe-action">← UNSCHEDULE</div>
+                    <div class="task-item"
+                         data-task-id="${task.id}"
+                         ondragover="handleDragOver(event)"
+                         ondrop="handleDrop(event)"
+                         ondragleave="handleDragLeave(event)">
+                        <div class="task-checkbox ${task.completed ? 'checked' : ''}" id="chk-${task.id}"></div>
+                        <div class="task-text ${task.completed ? 'completed' : ''}" 
+                             ondblclick="openEditModal(${task.id})"
+                             data-edit-id="${task.id}">
+                            ${task.text}
+                            <div class="task-category">
+                                <span class="category-dot" style="background-color: ${categoryColor}"></span>
+                                ${task.category}
+                            </div>
+                        </div>
+                        <div class="drag-handle" 
+                             draggable="true"
+                             ondragstart="handleDragStart(event)"
+                             ondragend="handleDragEnd(event)">⠿</div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            if (currentDayTasks.length === 0) {
+                mobileList.innerHTML = `
+                    <div style="text-align: center; color: var(--text-secondary); padding: 40px 20px; font-size: 14px; min-height: 200px;"
+                         ondragover="handleEmptyDayDragOver(event)"
+                         ondrop="handleEmptyDayDrop(event)">
+                        No tasks for this day<br>
+                        <span style="font-size: 12px; opacity: 0.7;">Drag tasks here to schedule</span>
+                    </div>
+                `;
+            }
+
+            // Make the entire task list a drop zone
+            mobileList.setAttribute('ondragover', 'handleDayColumnDragOver(event)');
+            mobileList.setAttribute('ondrop', 'handleDayColumnDrop(event)');
+
+            // Attach swipe listeners to all wrappers
+            document.querySelectorAll('.task-item-wrapper').forEach(wrapper => {
+                attachSwipeListener(wrapper);
+            });
+        }
+
+        function handleEmptyDayDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.style.background = 'rgba(0, 255, 102, 0.1)';
+            return false;
+        }
+
+        function handleEmptyDayDrop(e) {
+            e.preventDefault();
+            e.currentTarget.style.background = '';
+            
+            const draggedTask = tasks.find(t => t.id === draggedTaskId);
+            if (draggedTask) {
+                draggedTask.dayOffset = currentDayOffset;
+                draggedTask.order = 0;
+                saveTasks();
+                renderTasks();
+                
+                if (notionSyncEnabled) {
+                    syncTaskToNotion(draggedTask, 'update');
+                }
+            }
+        }
+
+        function handleDayColumnDragOver(e) {
+            e.preventDefault();
+            return false;
+        }
+
+        function handleDayColumnDrop(e) {
+            // Only handle if dropping on empty space (not on a task)
+            if (e.target.closest('.task-item')) {
+                return;
+            }
+            
+            e.preventDefault();
+            const draggedTask = tasks.find(t => t.id === draggedTaskId);
+            if (draggedTask && draggedTask.dayOffset !== currentDayOffset) {
+                draggedTask.dayOffset = currentDayOffset;
+                const dayTasks = tasks.filter(t => t.dayOffset === currentDayOffset);
+                draggedTask.order = dayTasks.length;
+                saveTasks();
+                renderTasks();
+                
+                if (notionSyncEnabled) {
+                    syncTaskToNotion(draggedTask, 'update');
+                }
+            }
+        }
+
+        function showAddTask() {
+            const input = document.getElementById('addTaskInput');
+            input.classList.add('visible');
+            input.focus();
+        }
+
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open')) {
+                updateNotionConfigButton();
+                populateSettingsPanel();
+            }
+        }
+
+        function populateSettingsPanel() {
+            // Light mode toggle state
+            const isLight = document.body.classList.contains('light-mode');
+            document.getElementById('lightModeToggle').classList.toggle('on', isLight);
+
+            // Font size buttons
+            const currentSize = localStorage.getItem('fontSize') || 'medium';
+            document.querySelectorAll('.font-size-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`font-${currentSize}`).classList.add('active');
+
+            // Default category dropdown
+            const defaultCat = localStorage.getItem('defaultCategory') || 'Brain Dump';
+            const select = document.getElementById('defaultCategorySelect');
+            select.innerHTML = Object.keys(categoryColors).map(name =>
+                `<option value="${name}" ${name === defaultCat ? 'selected' : ''}>${name}</option>`
+            ).join('');
+        }
+
+        // ── Light / Dark Mode ───────────────────────────────────
+        function toggleLightMode() {
+            const isLight = document.body.classList.toggle('light-mode');
+            localStorage.setItem('lightMode', isLight ? '1' : '0');
+            document.getElementById('lightModeToggle').classList.toggle('on', isLight);
+        }
+
+        // ── Font Size ───────────────────────────────────────────
+        function setFontSize(size) {
+            const sizes = { small: '13px', medium: '15px', large: '18px' };
+            document.querySelector('.mobile-view').style.fontSize = sizes[size];
+            localStorage.setItem('fontSize', size);
+            document.querySelectorAll('.font-size-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`font-${size}`).classList.add('active');
+        }
+
+        // ── Default Category ────────────────────────────────────
+        function saveDefaultCategory(value) {
+            localStorage.setItem('defaultCategory', value);
+        }
+
+        function getDefaultCategory() {
+            return localStorage.getItem('defaultCategory') || 'Brain Dump';
+        }
+
+        // ── Category Order ──────────────────────────────────────
+        let categoryOrder = JSON.parse(localStorage.getItem('categoryOrder') || 'null')
+            || Object.keys(categoryColors);
+
+        function saveCategoryOrder() {
+            localStorage.setItem('categoryOrder', JSON.stringify(categoryOrder));
+        }
+
+        function openCategoryOrderModal() {
+            renderCategoryOrderList();
+            document.getElementById('catOrderModal').classList.add('visible');
+        }
+
+        function closeCategoryOrderModal() {
+            document.getElementById('catOrderModal').classList.remove('visible');
+            // Re-render board if it's active so order change is reflected immediately
+            const boardActive = document.getElementById('categoryBoard').classList.contains('active');
+            if (boardActive) renderCategoryBoard();
+        }
+
+        document.getElementById('catOrderModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCategoryOrderModal();
+        });
+
+        function renderCategoryOrderList() {
+            // Ensure all categories present
+            Object.keys(categoryColors).forEach(cat => {
+                if (!categoryOrder.includes(cat)) categoryOrder.push(cat);
+            });
+            categoryOrder = categoryOrder.filter(cat => categoryColors[cat]);
+
+            const list = document.getElementById('categoryOrderList');
+            list.innerHTML = categoryOrder.map((cat) => `
+                <div class="category-order-item"
+                     draggable="true"
+                     data-cat="${cat}"
+                     ondragstart="orderDragStart(event)"
+                     ondragover="orderDragOver(event)"
+                     ondrop="orderDrop(event)"
+                     ondragend="orderDragEnd(event)">
+                    <span class="order-dot" style="background:${categoryColors[cat]}"></span>
+                    ${cat}
+                    <div class="order-handle">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Touch reorder support
+            list.querySelectorAll('.category-order-item').forEach(item => {
+                attachOrderTouchListener(item);
+            });
+        }
+
+        function attachOrderTouchListener(item) {
+            const handle = item.querySelector('.order-handle');
+            let startY = 0, isDragging = false;
+
+            handle.addEventListener('touchstart', e => {
+                startY = e.touches[0].clientY;
+                isDragging = true;
+                item.style.opacity = '0.6';
+                item.style.zIndex = '10';
+                e.stopPropagation();
+            }, { passive: true });
+
+            handle.addEventListener('touchmove', e => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const dy = e.touches[0].clientY - startY;
+                item.style.transform = `translateY(${dy}px)`;
+
+                // Highlight target
+                item.style.pointerEvents = 'none';
+                const el = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+                item.style.pointerEvents = '';
+                document.querySelectorAll('.category-order-item').forEach(i => i.classList.remove('drag-over'));
+                const over = el && el.closest('.category-order-item');
+                if (over && over !== item) over.classList.add('drag-over');
+            }, { passive: false });
+
+            handle.addEventListener('touchend', e => {
+                if (!isDragging) return;
+                isDragging = false;
+                item.style.opacity = '';
+                item.style.transform = '';
+                item.style.zIndex = '';
+
+                item.style.pointerEvents = 'none';
+                const el = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+                item.style.pointerEvents = '';
+
+                document.querySelectorAll('.category-order-item').forEach(i => i.classList.remove('drag-over'));
+
+                const over = el && el.closest('.category-order-item');
+                if (over && over !== item) {
+                    const fromCat = item.getAttribute('data-cat');
+                    const toCat = over.getAttribute('data-cat');
+                    const fromIdx = categoryOrder.indexOf(fromCat);
+                    const toIdx = categoryOrder.indexOf(toCat);
+                    categoryOrder.splice(fromIdx, 1);
+                    categoryOrder.splice(toIdx, 0, fromCat);
+                    saveCategoryOrder();
+                    renderCategoryOrderList();
+                }
+            });
+        }
+
+        let orderDraggingCat = null;
+
+        function orderDragStart(e) {
+            orderDraggingCat = e.currentTarget.getAttribute('data-cat');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function orderDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.style.borderColor = 'var(--accent-green)';
+        }
+
+        function orderDrop(e) {
+            e.preventDefault();
+            const targetCat = e.currentTarget.getAttribute('data-cat');
+            if (!orderDraggingCat || orderDraggingCat === targetCat) return;
+
+            const fromIdx = categoryOrder.indexOf(orderDraggingCat);
+            const toIdx = categoryOrder.indexOf(targetCat);
+            categoryOrder.splice(fromIdx, 1);
+            categoryOrder.splice(toIdx, 0, orderDraggingCat);
+            saveCategoryOrder();
+            renderCategoryOrderList();
+        }
+
+        function orderDragEnd(e) {
+            e.currentTarget.style.borderColor = '';
+            orderDraggingCat = null;
+        }
+
+        function switchView(view) {
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            const mobileView = document.querySelector('.mobile-view');
+            const categoryBoard = document.getElementById('categoryBoard');
+            const dayNav = document.querySelector('.day-nav');
+            const layoutToggle = document.getElementById('layoutToggle');
+
+            if (view === 'tasks') {
+                mobileView.style.display = 'none';
+                categoryBoard.classList.add('active');
+                dayNav.style.display = 'none';
+                layoutToggle.classList.add('visible');
+                applyBoardLayout();
+                renderCategoryBoard();
+            } else {
+                mobileView.style.display = 'block';
+                categoryBoard.classList.remove('active');
+                dayNav.style.display = 'flex';
+                layoutToggle.classList.remove('visible');
+                currentDayOffset = 0;
+                updateDateDisplay();
+                renderTasks();
+            }
+        }
+
+        let boardLayout = localStorage.getItem('boardLayout') || 'vertical';
+
+        function applyBoardLayout() {
+            const board = document.getElementById('categoryBoard');
+            const btn = document.getElementById('layoutToggle');
+            if (boardLayout === 'horizontal') {
+                board.classList.add('layout-horizontal');
+                btn.textContent = '⊞';
+                btn.classList.add('active-layout');
+                btn.title = 'Switch to vertical';
+            } else {
+                board.classList.remove('layout-horizontal');
+                btn.textContent = '⊟';
+                btn.classList.remove('active-layout');
+                btn.title = 'Switch to horizontal';
+            }
+        }
+
+        function toggleBoardLayout() {
+            boardLayout = boardLayout === 'vertical' ? 'horizontal' : 'vertical';
+            localStorage.setItem('boardLayout', boardLayout);
+            applyBoardLayout();
+        }
+
+        function renderCategoryBoard() {
+            const board = document.getElementById('categoryBoard');
+            
+            // Get all tasks without due dates (dayOffset = 999 or null)
+            const unscheduledTasks = tasks.filter(t => t.dayOffset === 999 || t.dayOffset === null);
+            
+            // Group by category
+            const categories = {};
+            unscheduledTasks.forEach(task => {
+                const cat = task.category || 'Personal';
+                if (!categories[cat]) {
+                    categories[cat] = [];
+                }
+                categories[cat].push(task);
+            });
+
+            // Render columns in user-defined order
+            const orderedCategories = categoryOrder
+                .filter(cat => categories[cat])
+                .concat(Object.keys(categories).filter(cat => !categoryOrder.includes(cat)));
+
+            board.innerHTML = orderedCategories.map(categoryName => {
+                const categoryColor = categoryColors[categoryName] || '#888780';
+                const taskList = categories[categoryName];
+                
+                return `
+                    <div class="category-column">
+                        <div class="category-header">
+                            <div class="category-title" style="background-color: ${categoryColor}20; color: ${categoryColor};">
+                                <span class="category-dot" style="background-color: ${categoryColor};"></span>
+                                ${categoryName}
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="category-count">${taskList.length}</div>
+                                <button onclick="showCategoryInput('${categoryName}')" style="background:none; border:none; color:${categoryColor}; font-size:22px; cursor:pointer; padding:0; line-height:1; opacity:0.8;">+</button>
+                            </div>
+                        </div>
+                        <div class="category-add-input" id="cat-input-${categoryName.replace(/\s+/g,'-')}" style="display:none; margin-bottom:10px;">
+                            <input type="text"
+                                   placeholder="New task..."
+                                   style="width:100%; background:var(--task-bg); border:1px solid ${categoryColor}; color:var(--text-primary); padding:10px; border-radius:6px; font-size:14px;"
+                                   onkeydown="handleCategoryInput(event, '${categoryName}')"
+                                   onblur="hideCategoryInput('${categoryName}')" />
+                        </div>
+                        <div class="category-tasks" data-category="${categoryName}">
+                            ${taskList.map(task => `
+                                <div class="category-task-wrapper" data-task-id="${task.id}">
+                                    <div class="category-swipe-delete">DELETE</div>
+                                    <div class="category-task-item"
+                                         draggable="true"
+                                         data-task-id="${task.id}"
+                                         style="border-left-color: ${categoryColor};"
+                                         ondragstart="handleCategoryDragStart(event)"
+                                         ondragend="handleCategoryDragEnd(event)">
+                                        ${task.text}
+                                        <div style="font-size:10px; color: var(--text-secondary); margin-top:4px; opacity:0.6;">2x tap → edit · 3x tap → today · hold → pick day</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (Object.keys(categories).length === 0) {
+                board.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 40px;">No unscheduled tasks</div>';
+            }
+
+            // Attach all board task interactions via one unified listener on the wrapper
+            board.querySelectorAll('.category-task-wrapper').forEach(wrapper => {
+                attachBoardListeners(wrapper);
+            });
+        }
+
+        function showCategoryInput(categoryName) {
+            const id = 'cat-input-' + categoryName.replace(/\s+/g, '-');
+            const wrapper = document.getElementById(id);
+            if (!wrapper) return;
+            wrapper.style.display = 'block';
+            const input = wrapper.querySelector('input');
+            setTimeout(() => input.focus(), 50);
+        }
+
+        function hideCategoryInput(categoryName) {
+            const id = 'cat-input-' + categoryName.replace(/\s+/g, '-');
+            const wrapper = document.getElementById(id);
+            if (wrapper) setTimeout(() => wrapper.style.display = 'none', 150);
+        }
+
+        function handleCategoryInput(e, categoryName) {
+            if (e.key === 'Enter') {
+                const text = e.target.value.trim();
+                if (!text) return;
+                const task = {
+                    id: Date.now(),
+                    text: text,
+                    completed: false,
+                    dayOffset: 999,
+                    category: categoryName,
+                    order: tasks.filter(t => t.dayOffset === 999 && t.category === categoryName).length,
+                    createdAt: new Date().toISOString()
+                };
+                tasks.push(task);
+                saveTasks();
+                if (notionSyncEnabled) syncTaskToNotion(task, 'create');
+                renderCategoryBoard();
+            } else if (e.key === 'Escape') {
+                hideCategoryInput(categoryName);
+            }
+        }
+
+        function attachBoardListeners(wrapper) {
+            const item = wrapper.querySelector('.category-task-item');
+            if (!item) return;
+
+            let startX = 0, startY = 0, currentX = 0;
+            let mode = null; // null | 'tap' | 'swipe' | 'longpress'
+            let tapCount = 0;
+            let tapTimer = null;
+            let longpressTimer = null;
+
+            wrapper.addEventListener('touchstart', e => {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                currentX = 0;
+                mode = 'tap';
+                tapCount++;
+
+                clearTimeout(tapTimer);
+                clearTimeout(longpressTimer);
+
+                // Long press timer (cancelled if we swipe or tap again)
+                longpressTimer = setTimeout(() => {
+                    if (mode === 'tap') {
+                        mode = 'longpress';
+                        tapCount = 0;
+                        const taskId = parseInt(wrapper.getAttribute('data-task-id'));
+                        openLongpressPicker(taskId);
+                    }
+                }, 600);
+
+                // Tap resolver — after 350ms of no more taps, decide what to do
+                tapTimer = setTimeout(() => {
+                    if (mode !== 'tap') return;
+                    const count = tapCount;
+                    tapCount = 0;
+                    const taskId = parseInt(wrapper.getAttribute('data-task-id'));
+                    clearTimeout(longpressTimer);
+
+                    if (count === 2) {
+                        openEditModal(taskId);
+                    } else if (count >= 3) {
+                        scheduleBoardTaskToDay(taskId, 0);
+                        item.style.background = 'rgba(0,255,102,0.25)';
+                        setTimeout(() => renderCategoryBoard(), 350);
+                    }
+                }, 350);
+            }, { passive: true });
+
+            wrapper.addEventListener('touchmove', e => {
+                const dx = e.touches[0].clientX - startX;
+                const dy = e.touches[0].clientY - startY;
+
+                // Promote to swipe if movement is clearly horizontal
+                if (mode === 'tap' && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+                    if (Math.abs(dx) > Math.abs(dy) && dx < 0) {
+                        mode = 'swipe';
+                        clearTimeout(longpressTimer);
+                        clearTimeout(tapTimer);
+                        tapCount = 0;
+                    } else {
+                        // Vertical scroll — abort tap
+                        mode = null;
+                        clearTimeout(longpressTimer);
+                        clearTimeout(tapTimer);
+                        tapCount = 0;
+                    }
+                }
+
+                if (mode === 'swipe') {
+                    e.preventDefault();
+                    currentX = Math.min(0, dx);
+                    item.style.transition = 'none';
+                    item.style.transform = `translateX(${currentX}px)`;
+                    wrapper.classList.toggle('swiping', currentX < -20);
+                }
+            }, { passive: false });
+
+            wrapper.addEventListener('touchend', () => {
+                if (mode === 'swipe') {
+                    mode = null;
+                    if (currentX < -60) {
+                        // Far enough — slide off and ask to delete
+                        const taskId = parseInt(wrapper.getAttribute('data-task-id'));
+                        const task = tasks.find(t => t.id === taskId);
+                        const taskName = task ? task.text : 'this task';
+
+                        item.style.transition = 'transform 0.25s ease';
+                        item.style.transform = 'translateX(-110%)';
+                        wrapper.classList.remove('swiping');
+
+                        setTimeout(() => {
+                            if (confirm(`Delete "${taskName}"?`)) {
+                                tasks = tasks.filter(t => t.id !== taskId);
+                                saveTasks();
+                                renderCategoryBoard();
+                            } else {
+                                item.style.transition = 'transform 0.2s ease';
+                                item.style.transform = 'translateX(0)';
+                            }
+                        }, 260);
+                    } else {
+                        // Snap back
+                        item.style.transition = 'transform 0.2s ease';
+                        item.style.transform = 'translateX(0)';
+                        wrapper.classList.remove('swiping');
+                    }
+                }
+                currentX = 0;
+            });
+
+            // Desktop: double-click opens edit
+            item.addEventListener('dblclick', e => {
+                e.stopPropagation();
+                const taskId = parseInt(wrapper.getAttribute('data-task-id'));
+                openEditModal(taskId);
+            });
+        }
+
+        function scheduleBoardTaskToDay(taskId, dayOffset) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            task.dayOffset = dayOffset;
+            const dayTasks = tasks.filter(t => t.dayOffset === dayOffset);
+            task.order = dayTasks.length;
+            saveTasks();
+            if (notionSyncEnabled) syncTaskToNotion(task, 'update');
+        }
+
+        function handleCategoryDragStart(e) {
+            const taskId = parseInt(e.currentTarget.getAttribute('data-task-id'));
+            draggedTaskId = taskId;
+            e.currentTarget.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            
+            // Store that this is from category board
+            e.dataTransfer.setData('fromCategoryBoard', 'true');
+        }
+
+        function handleCategoryDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+        }
+
+        // Date Picker Functions
+        function toggleDatePicker() {
+            const picker = document.getElementById('datePicker');
+            
+            if (!picker.classList.contains('visible')) {
+                // Generate picker items dynamically
+                generateDatePickerItems();
+            }
+            
+            picker.classList.toggle('visible');
+            
+            // Close when clicking outside
+            if (picker.classList.contains('visible')) {
+                setTimeout(() => {
+                    document.addEventListener('click', closeDatePickerOnClickOutside);
+                }, 0);
+            }
+        }
+
+        function generateDatePickerItems() {
+            const picker = document.getElementById('datePicker');
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            let html = '';
+            
+            for (let i = 0; i <= 14; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() + i);
+                
+                const dayName = days[date.getDay()];
+                const monthName = months[date.getMonth()];
+                const dayNum = date.getDate();
+                const isToday = i === 0;
+                
+                html += `<div class="date-picker-item ${isToday ? 'active' : ''}" onclick="jumpToDay(${i})">
+                    ${dayName}, ${monthName} ${dayNum}
+                </div>`;
+            }
+            
+            picker.innerHTML = html;
+        }
+
+        function closeDatePickerOnClickOutside(e) {
+            const picker = document.getElementById('datePicker');
+            const dayNav = document.querySelector('.day-nav');
+            
+            if (!dayNav.contains(e.target)) {
+                picker.classList.remove('visible');
+                document.removeEventListener('click', closeDatePickerOnClickOutside);
+            }
+        }
+
+        function jumpToDay(offset) {
+            currentDayOffset = offset;
+            updateDateDisplay();
+            renderTasks();
+            
+            // Close picker
+            const picker = document.getElementById('datePicker');
+            picker.classList.remove('visible');
+            document.removeEventListener('click', closeDatePickerOnClickOutside);
+        }
+
+        const NOTION_API_BASE = '/api/notion';
+        const notionAuthStateKey = 'notionOAuthPending';
+
+        function getNotionWorkspaceConfig() {
+            try {
+                const raw = localStorage.getItem('notionWorkspaceConfig');
+                if (!raw) return {
+                    sourceId: '',
+                    titleProp: 'Task',
+                    statusProp: 'Status',
+                    dueProp: 'Due Date',
+                    categoryProp: 'Category'
+                };
+                const config = JSON.parse(raw);
+                return {
+                    sourceId: (config.sourceId || '').trim(),
+                    titleProp: (config.titleProp || 'Task').trim(),
+                    statusProp: (config.statusProp || 'Status').trim(),
+                    dueProp: (config.dueProp || 'Due Date').trim(),
+                    categoryProp: (config.categoryProp || 'Category').trim()
+                };
+            } catch (error) {
+                console.error('Failed to read workspace config:', error);
+                return {
+                    sourceId: '',
+                    titleProp: 'Task',
+                    statusProp: 'Status',
+                    dueProp: 'Due Date',
+                    categoryProp: 'Category'
+                };
+            }
+        }
+
+        function saveWorkspaceConfigLocal(config) {
+            localStorage.setItem('notionWorkspaceConfig', JSON.stringify({
+                sourceId: config.sourceId || '',
+                titleProp: config.titleProp || 'Task',
+                statusProp: config.statusProp || 'Status',
+                dueProp: config.dueProp || 'Due Date',
+                categoryProp: config.categoryProp || 'Category'
+            }));
+        }
+
+        async function notionRequest(path, options = {}) {
+            const response = await fetch(`${NOTION_API_BASE}${path}`, {
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {})
+                },
+                ...options
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.error || `Request failed with ${response.status}`);
+            }
+            return data;
+        }
+
+        async function getNotionConnectionStatus() {
+            try {
+                return await notionRequest('/status', { method: 'GET' });
+            } catch (error) {
+                return { connected: false, error: error.message };
+            }
+        }
+
+        function fillNotionConfigForm() {
+            const config = getNotionWorkspaceConfig();
+            document.getElementById('notionDataSourceInput').value = config.sourceId || '';
+            document.getElementById('notionTitlePropInput').value = config.titleProp || 'Task';
+            document.getElementById('notionStatusPropInput').value = config.statusProp || 'Status';
+            document.getElementById('notionDuePropInput').value = config.dueProp || 'Due Date';
+            document.getElementById('notionCategoryPropInput').value = config.categoryProp || 'Category';
+        }
+
+        async function updateNotionConfigButton() {
+            const btn = document.querySelector('[onclick="manageNotionConfig()"]');
+            if (!btn) return;
+            const status = await getNotionConnectionStatus();
+            btn.textContent = status.connected ? '✓ Notion Connected' : 'Connect Notion';
+        }
+
+        async function updateNotionConnectionStatusText() {
+            const statusEl = document.getElementById('notionConnectionStatus');
+            if (!statusEl) return;
+            const status = await getNotionConnectionStatus();
+
+            if (status.connected) {
+                const workspaceName = status.workspace_name || 'Connected workspace';
+                statusEl.innerHTML = `Connected to <strong>${workspaceName}</strong>.`;
+            } else {
+                statusEl.textContent = 'Not connected yet.';
+            }
+        }
+
+        async function manageNotionConfig() {
+            fillNotionConfigForm();
+            await updateNotionConnectionStatusText();
+            document.getElementById('notionConfigModal').classList.add('visible');
+            setTimeout(() => document.getElementById('notionDataSourceInput').focus(), 30);
+        }
+
+        function closeNotionConfigModal() {
+            document.getElementById('notionConfigModal').classList.remove('visible');
+        }
+
+        function saveNotionWorkspaceConfig() {
+            const sourceId = document.getElementById('notionDataSourceInput').value.trim();
+            const titleProp = document.getElementById('notionTitlePropInput').value.trim() || 'Task';
+            const statusProp = document.getElementById('notionStatusPropInput').value.trim() || 'Status';
+            const dueProp = document.getElementById('notionDuePropInput').value.trim() || 'Due Date';
+            const categoryProp = document.getElementById('notionCategoryPropInput').value.trim() || 'Category';
+
+            if (!sourceId) {
+                alert('Please enter your Notion database or data source ID.');
+                return;
+            }
+
+            saveWorkspaceConfigLocal({ sourceId, titleProp, statusProp, dueProp, categoryProp });
+            closeNotionConfigModal();
+            alert('Notion settings saved for this browser.');
+        }
+
+        async function connectNotionOAuth() {
+            try {
+                const state = crypto.randomUUID();
+                sessionStorage.setItem(notionAuthStateKey, state);
+                const auth = await notionRequest(`/auth-url?state=${encodeURIComponent(state)}`, { method: 'GET' });
+                if (!auth || !auth.url) {
+                    throw new Error('No authorization URL was returned by the server.');
+                }
+                window.location.href = auth.url;
+            } catch (error) {
+                console.error('Notion OAuth start failed:', error);
+                alert(`Connect with Notion failed:
+
+${error.message}`);
+            }
+        }
+
+        async function disconnectNotion() {
+            if (!confirm('Disconnect this browser from Notion?')) return;
+            await notionRequest('/disconnect', { method: 'POST' });
+            notionSyncEnabled = false;
+            localStorage.removeItem('notionSyncEnabled');
+            await updateNotionConfigButton();
+            await updateNotionConnectionStatusText();
+            alert('Notion disconnected.');
+        }
+
+        document.getElementById('notionConfigModal').addEventListener('click', function(e) {
+            if (e.target === this) closeNotionConfigModal();
+        });
+
+        function getNotionQueryString() {
+            const config = getNotionWorkspaceConfig();
+            if (!config.sourceId) {
+                throw new Error('No Notion database/data source ID saved. Open Connect Notion and save it first.');
+            }
+            const params = new URLSearchParams({
+                sourceId: config.sourceId,
+                titleProp: config.titleProp,
+                statusProp: config.statusProp,
+                dueProp: config.dueProp,
+                categoryProp: config.categoryProp
+            });
+            return params.toString();
+        }
+
+        function getDueDateFromOffset(offset) {
+            if (offset === 999 || offset === null || offset === undefined) return null;
+            const date = new Date();
+            date.setDate(date.getDate() + offset);
+            return date.toISOString().split('T')[0];
+        }
+
+        function calculateDayOffset(dateString) {
+            if (!dateString) return 999;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const targetDate = new Date(dateString);
+            targetDate.setHours(0, 0, 0, 0);
+            return Math.round((targetDate - today) / (1000 * 60 * 60 * 24));
+        }
+
+        async function syncNotion(buttonEl = null) {
+            const status = await getNotionConnectionStatus();
+            if (!status.connected) {
+                manageNotionConfig();
+                return;
+            }
+
+            const syncBtn = buttonEl || document.querySelector('[data-sync-notion]');
+            const originalText = syncBtn ? syncBtn.textContent : '';
+
+            try {
+                const qs = getNotionQueryString();
+
+                if (syncBtn) {
+                    syncBtn.textContent = 'Syncing...';
+                    syncBtn.disabled = true;
+                }
+
+                const notionTasks = await notionRequest(`/tasks?${qs}`, { method: 'GET' });
+
+                const notionColorMap = {
+                    blue: '#378ADD',
+                    red: '#E24B4A',
+                    green: '#639922',
+                    orange: '#EF9F27',
+                    yellow: '#E6C14C',
+                    purple: '#7F77DD',
+                    pink: '#d4537e',
+                    brown: '#BA7517',
+                    gray: '#888780',
+                    default: '#888780'
+                };
+
+                tasks = notionTasks.map((nt, index) => {
+                    const dayOffset = nt.dueDate ? calculateDayOffset(nt.dueDate) : 999;
+                    const category = nt.category || 'Brain Dump';
+                    if (nt.categoryColor && category) {
+                        const colorName = String(nt.categoryColor).toLowerCase();
+                        categoryColors[category] = notionColorMap[colorName] || notionColorMap.default;
+                    }
+
+                    return {
+                        id: Date.now() + index,
+                        text: nt.text || '',
+                        completed: !!nt.completed,
+                        dayOffset,
+                        category,
+                        order: index,
+                        notionId: nt.notionId,
+                        createdAt: new Date().toISOString()
+                    };
+                });
+
+                saveTasks();
+                renderTasks();
+
+                notionSyncEnabled = true;
+                localStorage.setItem('notionSyncEnabled', 'true');
+
+                if (syncBtn) {
+                    syncBtn.textContent = '✓ Sync Complete!';
+                    setTimeout(() => {
+                        syncBtn.textContent = originalText;
+                        syncBtn.disabled = false;
+                    }, 1500);
+                }
+            } catch (error) {
+                console.error('Notion sync failed:', error);
+
+                if (syncBtn) {
+                    syncBtn.textContent = originalText;
+                    syncBtn.disabled = false;
+                }
+
+                alert(`Notion sync failed:\n\n${error.message}`);
+            }
+        }
+
+        async function syncTaskToNotion(task, action = 'create') {
+            const status = await getNotionConnectionStatus();
+            if (!status.connected) {
+                console.log('No Notion OAuth connection saved - task not synced');
+                return;
+            }
+
+            const config = getNotionWorkspaceConfig();
+            if (!config.sourceId) {
+                console.log('No Notion source ID saved - task not synced');
+                return;
+            }
+
+            const payload = {
+                config,
+                task: {
+                    text: task.text,
+                    completed: !!task.completed,
+                    status: task.completed ? 'Done' : 'Not started',
+                    dueDate: getDueDateFromOffset(task.dayOffset),
+                    category: task.category || 'Brain Dump'
+                }
+            };
+
+            try {
+                if (action === 'create') {
+                    const created = await notionRequest('/tasks', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+                    if (created?.notionId) {
+                        task.notionId = created.notionId;
+                        saveTasks();
+                    }
+                    return created;
+                }
+
+                if (action === 'update') {
+                    if (!task.notionId) {
+                        return await syncTaskToNotion(task, 'create');
+                    }
+
+                    return await notionRequest(`/${task.notionId}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                if (action === 'delete') {
+                    if (!task.notionId) return { ok: true, skipped: true };
+                    return await notionRequest(`/${task.notionId}`, {
+                        method: 'DELETE',
+                        body: JSON.stringify({ config })
+                    });
+                }
+            } catch (error) {
+                console.error(`Notion ${action} failed:`, error);
+                throw error;
+            }
+        }
+
+        (async function handleOAuthReturn() {
+            const params = new URLSearchParams(window.location.search);
+            if (!params.has('notion_connected') && !params.has('error')) {
+                updateNotionConfigButton();
+                return;
+            }
+
+            const state = params.get('state');
+            const expectedState = sessionStorage.getItem(notionAuthStateKey);
+
+            if (state && expectedState && state !== expectedState) {
+                alert('Notion connection failed: invalid state token.');
+            } else if (params.get('error')) {
+                alert(`Notion connection failed: ${params.get('error')}`);
+            } else if (params.get('notion_connected') === '1') {
+                notionSyncEnabled = true;
+                localStorage.setItem('notionSyncEnabled', 'true');
+                alert('Notion connected successfully.');
+            }
+
+            sessionStorage.removeItem(notionAuthStateKey);
+            const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+            window.history.replaceState({}, document.title, cleanUrl);
+            updateNotionConfigButton();
+        })();        // Initialize on load
+        init();
+    </script>
 </body>
 </html>
