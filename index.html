@@ -2140,7 +2140,7 @@
         }
 
         const NOTION_API_BASE = '/api/notion';
-        const notionAuthStateKey = 'notionOAuthPending';
+        var notionAuthStateKey = 'notion_oauth_state';
 
         function getNotionWorkspaceConfig() {
             try {
@@ -2266,18 +2266,18 @@
 
         async function connectNotionOAuth() {
             try {
-                const state = crypto.randomUUID();
+                const state = (window.crypto && crypto.randomUUID)
+                    ? crypto.randomUUID()
+                    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
                 sessionStorage.setItem(notionAuthStateKey, state);
                 const auth = await notionRequest(`/auth-url?state=${encodeURIComponent(state)}`, { method: 'GET' });
                 if (!auth || !auth.url) {
                     throw new Error('No authorization URL was returned by the server.');
                 }
-                window.location.href = auth.url;
+                window.location.assign(auth.url);
             } catch (error) {
                 console.error('Notion OAuth start failed:', error);
-                alert(`Connect with Notion failed:
-
-${error.message}`);
+                alert(`Connect with Notion failed:\n\n${error.message}`);
             }
         }
 
