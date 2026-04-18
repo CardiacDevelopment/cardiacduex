@@ -1219,8 +1219,17 @@
 
         <!-- API Key -->
         <div class="setting-item">
-            <div class="setting-label">API Key</div>
+            <div class="setting-label">Claude API Key</div>
             <button class="setting-button" onclick="manageAPIKey()">Add API Key</button>
+        </div>
+
+        <!-- Notion Token -->
+        <div class="setting-item">
+            <div class="setting-label">Notion Integration Token</div>
+            <button class="setting-button" onclick="manageNotionToken()">Add Notion Token</button>
+            <p style="font-size:11px; color:var(--text-secondary); margin-top:6px; line-height:1.5;">
+                Get this from <strong>notion.so/my-integrations</strong> → New integration → copy the token starting with <em>secret_</em>
+            </p>
         </div>
     </div>
 
@@ -1229,12 +1238,31 @@
         <div class="modal-content">
             <div class="modal-title">Enter Claude API Key</div>
             <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
-                This is only needed for Notion sync features. Your key is stored locally and never sent anywhere except Anthropic's API.
+                Required for Notion sync. Stored locally, only sent to Anthropic's API.
             </p>
             <input type="password" class="modal-input" id="apiKeyInput" placeholder="sk-ant-..." />
             <div class="modal-buttons">
                 <button class="modal-button cancel" onclick="closeAPIKeyModal()">Cancel</button>
                 <button class="modal-button confirm" onclick="saveAPIKey()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notion Token Modal -->
+    <div class="modal" id="notionTokenModal">
+        <div class="modal-content">
+            <div class="modal-title">Notion Integration Token</div>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
+                1. Go to <strong>notion.so/my-integrations</strong><br>
+                2. Click <strong>+ New integration</strong><br>
+                3. Name it "Cardiac Core", select your workspace<br>
+                4. Copy the <strong>Internal Integration Secret</strong><br>
+                5. Also make sure to <strong>share your Task Database</strong> with the integration in Notion
+            </p>
+            <input type="password" class="modal-input" id="notionTokenInput" placeholder="secret_..." style="margin-top:8px;" />
+            <div class="modal-buttons">
+                <button class="modal-button cancel" onclick="closeNotionTokenModal()">Cancel</button>
+                <button class="modal-button confirm" onclick="saveNotionToken()">Save</button>
             </div>
         </div>
     </div>
@@ -1591,6 +1619,9 @@
             select.innerHTML = Object.keys(categoryColors).map(name =>
                 `<option value="${name}" ${name === defaultCat ? 'selected' : ''}>${name}</option>`
             ).join('');
+
+            updateAPIKeyButton();
+            updateNotionTokenButton();
         }
 
         // ── Light / Dark Mode ───────────────────────────────────
@@ -2145,6 +2176,23 @@
             syncBtn.textContent = 'Syncing...';
             syncBtn.disabled = true;
 
+            const notionToken = localStorage.getItem('notionToken');
+            if (!notionToken) {
+                syncBtn.textContent = originalText;
+                syncBtn.disabled = false;
+                if (confirm('You need a Notion Integration Token to sync.\n\nOpen settings to add one?')) {
+                    toggleSettings();
+                }
+                return;
+            }
+
+            const mcpServer = {
+                type: 'url',
+                url: 'https://mcp.notion.com/mcp',
+                name: 'notion-mcp',
+                authorization_token: notionToken
+            };
+
             // Proceed with Notion sync
             try {
                 const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -2188,11 +2236,7 @@ Return the result as a JSON array inside a \`\`\`json code block like this:
 
 Include ALL tasks, even ones without due dates. Use null for dueDate when there isn't one.`
                         }],
-                        mcp_servers: [{
-                            type: 'url',
-                            url: 'https://mcp.notion.com/mcp',
-                            name: 'notion-mcp'
-                        }]
+                        mcp_servers: [mcpServer]
                     })
                 });
 
@@ -2422,6 +2466,45 @@ Include ALL tasks, even ones without due dates. Use null for dueDate when there 
                 }
             } else {
                 showAPIKeyModal('manage');
+            }
+        }
+
+        function manageNotionToken() {
+            const hasToken = localStorage.getItem('notionToken');
+            if (hasToken) {
+                const last4 = hasToken.slice(-4);
+                if (confirm(`Notion token saved (ending ...${last4})\n\nClick OK to remove it, Cancel to keep it.`)) {
+                    localStorage.removeItem('notionToken');
+                    updateNotionTokenButton();
+                }
+            } else {
+                document.getElementById('notionTokenInput').value = '';
+                document.getElementById('notionTokenModal').classList.add('visible');
+            }
+        }
+
+        function closeNotionTokenModal() {
+            document.getElementById('notionTokenModal').classList.remove('visible');
+        }
+
+        function saveNotionToken() {
+            const token = document.getElementById('notionTokenInput').value.trim();
+            if (!token) { alert('Please enter a token'); return; }
+            if (!token.startsWith('secret_') && !token.startsWith('ntn_')) {
+                alert('Invalid token format. Should start with "secret_" or "ntn_"');
+                return;
+            }
+            localStorage.setItem('notionToken', token);
+            document.getElementById('notionTokenInput').value = '';
+            closeNotionTokenModal();
+            updateNotionTokenButton();
+            alert('Notion token saved! Try syncing now.');
+        }
+
+        function updateNotionTokenButton() {
+            const btn = document.querySelector('[onclick="manageNotionToken()"]');
+            if (btn) {
+                btn.textContent = localStorage.getItem('notionToken') ? '✓ Notion Token Saved' : 'Add Notion Token';
             }
         }
 
@@ -3014,7 +3097,8 @@ Use the Notion database with data source ID: 2463401f-1a99-80fa-ad27-000b91c4691
                         mcp_servers: [{
                             type: 'url',
                             url: 'https://mcp.notion.com/mcp',
-                            name: 'notion-mcp'
+                            name: 'notion-mcp',
+                            authorization_token: localStorage.getItem('notionToken') || ''
                         }]
                     })
                 });
