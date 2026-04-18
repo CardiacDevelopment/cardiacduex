@@ -1196,7 +1196,13 @@
         <!-- Notion Sync -->
         <div class="setting-item">
             <div class="setting-label">Notion Sync</div>
-            <button class="setting-button accent" onclick="syncNotion(this)">Sync with Notion</button>
+            <button class="setting-button accent" data-sync-notion onclick="syncNotion(this)">Sync with Notion</button>
+        </div>
+
+        <!-- Notion Connection -->
+        <div class="setting-item">
+            <div class="setting-label">Notion Connection</div>
+            <button class="setting-button" onclick="manageNotionConfig()">Configure Notion</button>
         </div>
 
         <!-- Data -->
@@ -1207,25 +1213,26 @@
         <div class="setting-item">
             <button class="setting-button" onclick="loadExampleTasks()">Load Example Tasks</button>
         </div>
-
-        <!-- Notion Backend -->
-        <div class="setting-item">
-            <div class="setting-label">Notion Backend</div>
-            <button class="setting-button" onclick="manageBackendUrl()">Set Backend URL</button>
-        </div>
     </div>
 
-    <!-- Backend URL Modal -->
-    <div class="modal" id="backendUrlModal">
-        <div class="modal-content">
-            <div class="modal-title">Set Notion Backend URL</div>
-            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
-                Enter the base URL for your backend. Example: http://localhost:3000/api/notion
+    <!-- Notion Config Modal -->
+    <div class="modal" id="notionConfigModal">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-title">Connect Notion</div>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.45;">
+                Enter your own Notion integration token and the ID of the task table you want to sync.
+                This is stored only in this browser using local storage.
             </p>
-            <input type="text" class="modal-input" id="backendUrlInput" placeholder="http://localhost:3000/api/notion" />
+            <input type="password" class="modal-input" id="notionTokenInput" placeholder="secret_xxx or ntn_xxx" />
+            <input type="text" class="modal-input" id="notionDataSourceInput" placeholder="Data source ID or database ID" />
+            <input type="text" class="modal-input" id="notionTitlePropInput" placeholder="Title property name (default: Task)" />
+            <input type="text" class="modal-input" id="notionStatusPropInput" placeholder="Status property name (default: Status)" />
+            <input type="text" class="modal-input" id="notionDuePropInput" placeholder="Due date property name (default: Due Date)" />
+            <input type="text" class="modal-input" id="notionCategoryPropInput" placeholder="Category property name (default: Category)" />
             <div class="modal-buttons">
-                <button class="modal-button cancel" onclick="closeBackendUrlModal()">Cancel</button>
-                <button class="modal-button confirm" onclick="saveBackendUrl()">Save</button>
+                <button class="modal-button cancel" onclick="clearNotionConfig()">Clear</button>
+                <button class="modal-button cancel" onclick="closeNotionConfigModal()">Cancel</button>
+                <button class="modal-button confirm" onclick="saveNotionConfig()">Save</button>
             </div>
         </div>
     </div>
@@ -1327,7 +1334,7 @@
         let currentView = 'mobile';
         
         // Check if Notion sync was previously enabled
-        notionSyncEnabled = localStorage.getItem('notionSyncEnabled') === 'true';
+        notionSyncEnabled = !!getNotionConfig();
 
         // Initialize
         function init() {
@@ -1342,7 +1349,6 @@
             updateDateDisplay();
             renderTasks();
             initPullToRefresh();
-            updateBackendUrlButton();
             
             // Handle add task input
             const addTaskInput = document.getElementById('addTaskInput');
@@ -1437,14 +1443,20 @@
             }
         }
 
-        function deleteTask(taskId) {
+        async function deleteTask(taskId) {
             const task = tasks.find(t => t.id === taskId);
+
+            if (task && notionSyncEnabled) {
+                try {
+                    await syncTaskToNotion(task, 'delete');
+                } catch (error) {
+                    console.error('Failed to delete task in Notion:', error);
+                }
+            }
+
             tasks = tasks.filter(t => t.id !== taskId);
             saveTasks();
             renderTasks();
-            if (notionSyncEnabled && task) {
-                syncTaskToNotion(task, 'delete').catch(err => console.error(err));
-            }
         }
 
         function saveTasks() {
@@ -1525,7 +1537,7 @@
                 renderTasks();
                 
                 if (notionSyncEnabled) {
-                    syncTaskToNotion(draggedTask, 'update').catch(err => console.error(err));
+                    syncTaskToNotion(draggedTask, 'update');
                 }
             }
         }
@@ -1551,7 +1563,7 @@
                 renderTasks();
                 
                 if (notionSyncEnabled) {
-                    syncTaskToNotion(draggedTask, 'update').catch(err => console.error(err));
+                    syncTaskToNotion(draggedTask, 'update');
                 }
             }
         }
@@ -1566,7 +1578,7 @@
             const panel = document.getElementById('settingsPanel');
             panel.classList.toggle('open');
             if (panel.classList.contains('open')) {
-                updateBackendUrlButton();
+                updateNotionConfigButton();
                 populateSettingsPanel();
             }
         }
@@ -1912,7 +1924,7 @@
                 };
                 tasks.push(task);
                 saveTasks();
-                if (notionSyncEnabled) syncTaskToNotion(task, 'create').catch(err => console.error(err));
+                if (notionSyncEnabled) syncTaskToNotion(task, 'create');
                 renderCategoryBoard();
             } else if (e.key === 'Escape') {
                 hideCategoryInput(categoryName);
@@ -2125,82 +2137,249 @@
             document.removeEventListener('click', closeDatePickerOnClickOutside);
         }
 
-        const DEFAULT_NOTION_API_BASE = 'http://localhost:3000/api/notion';
+        const NOTION_API_BASE = 'https://api.notion.com/v1';
+        const NOTION_VERSION = '2026-03-11';
 
-        function getNotionApiBase() {
-            return (localStorage.getItem('notionApiBase') || DEFAULT_NOTION_API_BASE).replace(/\/$/, '');
-        }
-
-        function showBackendUrlModal() {
-            const input = document.getElementById('backendUrlInput');
-            input.value = getNotionApiBase();
-            document.getElementById('backendUrlModal').classList.add('visible');
-            setTimeout(() => input.focus(), 0);
-        }
-
-        function closeBackendUrlModal() {
-            document.getElementById('backendUrlModal').classList.remove('visible');
-        }
-
-        function saveBackendUrl() {
-            const input = document.getElementById('backendUrlInput');
-            const value = input.value.trim();
-            if (!value) {
-                alert('Please enter a backend URL.');
-                return;
-            }
-
+        function getNotionConfig() {
             try {
-                const parsed = new URL(value);
-                localStorage.setItem('notionApiBase', parsed.href.replace(/\/$/, ''));
-                closeBackendUrlModal();
-                updateBackendUrlButton();
-                alert('Backend URL saved.');
+                const raw = localStorage.getItem('notionConfig');
+                if (!raw) return null;
+                const config = JSON.parse(raw);
+                if (!config || !config.token || !config.sourceId) return null;
+                return {
+                    token: config.token.trim(),
+                    sourceId: config.sourceId.trim(),
+                    titleProp: (config.titleProp || 'Task').trim(),
+                    statusProp: (config.statusProp || 'Status').trim(),
+                    dueProp: (config.dueProp || 'Due Date').trim(),
+                    categoryProp: (config.categoryProp || 'Category').trim()
+                };
             } catch (error) {
-                alert('Please enter a valid URL, including http:// or https://');
+                console.error('Failed to read Notion config:', error);
+                return null;
             }
         }
 
-        function manageBackendUrl() {
-            showBackendUrlModal();
+        function getNotionHeaders(token) {
+            return {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Notion-Version': NOTION_VERSION
+            };
         }
 
-        function updateBackendUrlButton() {
-            const btn = document.querySelector('[onclick="manageBackendUrl()"]');
-            if (!btn) return;
-            const url = getNotionApiBase();
-            btn.textContent = `Backend: ${url.replace(/^https?:\/\//, '')}`;
-        }
+        async function notionApiRequest(path, options = {}, tokenOverride = null) {
+            const config = getNotionConfig();
+            const token = tokenOverride || config?.token;
 
-        async function notionRequest(path, options = {}) {
-            const response = await fetch(`${getNotionApiBase()}${path}`, {
+            if (!token) {
+                throw new Error('No Notion token saved.');
+            }
+
+            const response = await fetch(`${NOTION_API_BASE}${path}`, {
+                ...options,
                 headers: {
-                    'Content-Type': 'application/json',
+                    ...getNotionHeaders(token),
                     ...(options.headers || {})
-                },
-                ...options
+                }
             });
 
-            let data = null;
+            const text = await response.text();
+            let data = {};
             try {
-                data = await response.json();
-            } catch (error) {
-                if (!response.ok) {
-                    throw new Error(`Request failed with status ${response.status}`);
-                }
+                data = text ? JSON.parse(text) : {};
+            } catch {
+                data = { raw: text };
             }
 
             if (!response.ok) {
-                const message = data?.error || data?.message || `Request failed with status ${response.status}`;
+                const message = data.message || data.error || `Request failed with ${response.status}`;
                 throw new Error(message);
             }
 
             return data;
         }
 
+        function fillNotionConfigForm() {
+            const config = getNotionConfig() || {};
+            document.getElementById('notionTokenInput').value = config.token || '';
+            document.getElementById('notionDataSourceInput').value = config.sourceId || '';
+            document.getElementById('notionTitlePropInput').value = config.titleProp || 'Task';
+            document.getElementById('notionStatusPropInput').value = config.statusProp || 'Status';
+            document.getElementById('notionDuePropInput').value = config.dueProp || 'Due Date';
+            document.getElementById('notionCategoryPropInput').value = config.categoryProp || 'Category';
+        }
+
+        function manageNotionConfig() {
+            fillNotionConfigForm();
+            document.getElementById('notionConfigModal').classList.add('visible');
+            const first = document.getElementById('notionTokenInput');
+            setTimeout(() => first.focus(), 30);
+        }
+
+        function closeNotionConfigModal() {
+            document.getElementById('notionConfigModal').classList.remove('visible');
+        }
+
+        async function saveNotionConfig() {
+            const token = document.getElementById('notionTokenInput').value.trim();
+            const sourceId = document.getElementById('notionDataSourceInput').value.trim();
+            const titleProp = document.getElementById('notionTitlePropInput').value.trim() || 'Task';
+            const statusProp = document.getElementById('notionStatusPropInput').value.trim() || 'Status';
+            const dueProp = document.getElementById('notionDuePropInput').value.trim() || 'Due Date';
+            const categoryProp = document.getElementById('notionCategoryPropInput').value.trim() || 'Category';
+
+            if (!token) {
+                alert('Please enter a Notion API token.');
+                return;
+            }
+
+            if (!sourceId) {
+                alert('Please enter a Notion data source ID or database ID.');
+                return;
+            }
+
+            localStorage.setItem('notionConfig', JSON.stringify({
+                token,
+                sourceId,
+                titleProp,
+                statusProp,
+                dueProp,
+                categoryProp
+            }));
+            localStorage.setItem('notionSyncEnabled', 'true');
+            notionSyncEnabled = true;
+            updateNotionConfigButton();
+            closeNotionConfigModal();
+            alert('Notion connection saved.');
+        }
+
+        function clearNotionConfig() {
+            if (!confirm('Remove the saved Notion connection from this browser?')) return;
+            localStorage.removeItem('notionConfig');
+            localStorage.removeItem('notionSyncEnabled');
+            notionSyncEnabled = false;
+            updateNotionConfigButton();
+            closeNotionConfigModal();
+            alert('Notion connection removed.');
+        }
+
+        function updateNotionConfigButton() {
+            const btn = document.querySelector('[onclick="manageNotionConfig()"]');
+            if (!btn) return;
+            const config = getNotionConfig();
+            btn.textContent = config ? '✓ Notion Connected' : 'Configure Notion';
+        }
+
+        document.getElementById('notionConfigModal').addEventListener('click', function(e) {
+            if (e.target === this) closeNotionConfigModal();
+        });
+
+        function getPageTitle(page, titleProp) {
+            return page.properties?.[titleProp]?.title?.[0]?.plain_text || '';
+        }
+
+        function getPageStatus(page, statusProp) {
+            return page.properties?.[statusProp]?.status?.name || 'Not started';
+        }
+
+        function getPageDueDate(page, dueProp) {
+            return page.properties?.[dueProp]?.date?.start || null;
+        }
+
+        function getPageCategory(page, categoryProp) {
+            const categoryValue = page.properties?.[categoryProp];
+            if (categoryValue?.select?.name) {
+                return {
+                    name: categoryValue.select.name,
+                    color: categoryValue.select.color || null
+                };
+            }
+            if (Array.isArray(categoryValue?.multi_select) && categoryValue.multi_select.length > 0) {
+                return {
+                    name: categoryValue.multi_select[0].name,
+                    color: categoryValue.multi_select[0].color || null
+                };
+            }
+            return { name: 'Brain Dump', color: null };
+        }
+
+        async function queryAllNotionTasks(config) {
+            let results = [];
+            let hasMore = true;
+            let cursor = null;
+            let mode = 'data_source';
+
+            while (hasMore) {
+                let endpoint = mode === 'data_source'
+                    ? `/data_sources/${config.sourceId}/query`
+                    : `/databases/${config.sourceId}/query`;
+
+                let data;
+                try {
+                    data = await notionApiRequest(endpoint, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            page_size: 100,
+                            ...(cursor ? { start_cursor: cursor } : {})
+                        })
+                    }, config.token);
+                } catch (error) {
+                    if (mode === 'data_source') {
+                        mode = 'database';
+                        endpoint = `/databases/${config.sourceId}/query`;
+                        data = await notionApiRequest(endpoint, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                page_size: 100,
+                                ...(cursor ? { start_cursor: cursor } : {})
+                            })
+                        }, config.token);
+                    } else {
+                        throw error;
+                    }
+                }
+
+                results.push(...(data.results || []));
+                hasMore = !!data.has_more;
+                cursor = data.next_cursor || null;
+            }
+
+            return results
+                .filter(item => item.object === 'page' && !item.in_trash)
+                .map(page => {
+                    const category = getPageCategory(page, config.categoryProp);
+                    return {
+                        notionId: page.id,
+                        text: getPageTitle(page, config.titleProp),
+                        completed: ['done', 'completed'].includes(getPageStatus(page, config.statusProp).toLowerCase()),
+                        status: getPageStatus(page, config.statusProp),
+                        dueDate: getPageDueDate(page, config.dueProp),
+                        category: category.name || 'Brain Dump',
+                        categoryColor: category.color || null
+                    };
+                });
+        }
+
+        function calculateDayOffset(dateString) {
+            if (!dateString) return 999;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const targetDate = new Date(dateString);
+            targetDate.setHours(0, 0, 0, 0);
+            const diffTime = targetDate - today;
+            return Math.round(diffTime / (1000 * 60 * 60 * 24));
+        }
+
         async function syncNotion(buttonEl = null) {
-            const syncBtn = buttonEl || document.querySelector('[onclick="syncNotion(this)"]');
-            const originalText = syncBtn ? syncBtn.textContent : null;
+            const config = getNotionConfig();
+            if (!config) {
+                manageNotionConfig();
+                return;
+            }
+
+            const syncBtn = buttonEl || document.querySelector('[data-sync-notion]');
+            const originalText = syncBtn ? syncBtn.textContent : '';
 
             try {
                 if (syncBtn) {
@@ -2208,36 +2387,36 @@
                     syncBtn.disabled = true;
                 }
 
-                const notionTasks = await notionRequest('/tasks', { method: 'GET' });
+                const notionTasks = await queryAllNotionTasks(config);
+
                 const notionColorMap = {
-                    default: '#888780',
-                    gray: '#888780',
-                    grey: '#888780',
-                    brown: '#BA7517',
+                    blue: '#378ADD',
+                    red: '#E24B4A',
+                    green: '#639922',
                     orange: '#EF9F27',
                     yellow: '#E6C14C',
-                    green: '#639922',
-                    blue: '#378ADD',
                     purple: '#7F77DD',
                     pink: '#d4537e',
-                    red: '#E24B4A'
+                    brown: '#BA7517',
+                    gray: '#888780',
+                    grey: '#888780',
+                    default: '#888780'
                 };
 
                 tasks = notionTasks.map((nt, index) => {
-                    const dayOffset = nt.dueDate ? calculateDayOffset(nt.dueDate) : 999;
-                    const category = nt.category || 'Brain Dump';
-                    const categoryColor = nt.categoryColor || 'default';
-
-                    categoryColors[category] = notionColorMap[String(categoryColor).toLowerCase()] || notionColorMap.default;
+                    if (nt.categoryColor && nt.category) {
+                        const colorName = String(nt.categoryColor).toLowerCase();
+                        categoryColors[nt.category] = notionColorMap[colorName] || notionColorMap.default;
+                    }
 
                     return {
                         id: Date.now() + index,
-                        text: nt.text || '',
+                        text: nt.text || 'Untitled',
                         completed: !!nt.completed,
-                        dayOffset,
-                        category,
+                        dayOffset: nt.dueDate ? calculateDayOffset(nt.dueDate) : 999,
+                        category: nt.category || 'Brain Dump',
                         order: index,
-                        notionId: nt.notionId || nt.id || null,
+                        notionId: nt.notionId,
                         createdAt: new Date().toISOString()
                     };
                 });
@@ -2252,7 +2431,7 @@
                     setTimeout(() => {
                         syncBtn.textContent = originalText;
                         syncBtn.disabled = false;
-                    }, 1500);
+                    }, 1600);
                 }
             } catch (error) {
                 console.error('Notion sync failed:', error);
@@ -2260,20 +2439,57 @@
                     syncBtn.textContent = originalText;
                     syncBtn.disabled = false;
                 }
-                alert(`Notion sync failed:
-
-${error.message}`);
+                alert('Notion sync failed:\n\n' + error.message);
             }
         }
 
-        function calculateDayOffset(dateString) {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const targetDate = new Date(dateString);
-            targetDate.setHours(0, 0, 0, 0);
-            const diffTime = targetDate - today;
-            return Math.round(diffTime / (1000 * 60 * 60 * 24));
+        function buildNotionProperties(task, config) {
+            const categoryName = task.category || 'Brain Dump';
+            return {
+                [config.titleProp]: {
+                    title: [{ text: { content: task.text || '' } }]
+                },
+                [config.statusProp]: {
+                    status: { name: task.completed ? 'Done' : 'Not started' }
+                },
+                [config.categoryProp]: {
+                    select: { name: categoryName }
+                },
+                [config.dueProp]: task.dayOffset === 999 || task.dayOffset === null || task.dayOffset === undefined
+                    ? { date: null }
+                    : { date: { start: getDueDateFromOffset(task.dayOffset) } }
+            };
         }
+
+        async function createNotionTask(task, config) {
+            try {
+                const data = await notionApiRequest('/pages', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        parent: {
+                            type: 'data_source_id',
+                            data_source_id: config.sourceId
+                        },
+                        properties: buildNotionProperties(task, config)
+                    })
+                }, config.token);
+                return data;
+            } catch (error) {
+                // fallback for older/alternate database-style IDs
+                const data = await notionApiRequest('/pages', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        parent: {
+                            type: 'database_id',
+                            database_id: config.sourceId
+                        },
+                        properties: buildNotionProperties(task, config)
+                    })
+                }, config.token);
+                return data;
+            }
+        }
+
         function exportTasks() {
             const dataStr = JSON.stringify(tasks, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -2420,15 +2636,11 @@ ${error.message}`);
         }
 
         function deleteEditingTask() {
-            const task = tasks.find(t => t.id === editingTaskId);
             tasks = tasks.filter(t => t.id !== editingTaskId);
             saveTasks();
             const boardActive = document.getElementById('categoryBoard').classList.contains('active');
             if (boardActive) renderCategoryBoard(); else renderTasks();
             closeEditModal();
-            if (notionSyncEnabled && task) {
-                syncTaskToNotion(task, 'delete').catch(err => console.error(err));
-            }
         }
 
         function closeEditModal() {
@@ -2692,7 +2904,7 @@ ${error.message}`);
                 task.order = 0;
                 saveTasks();
                 renderTasks();
-                if (notionSyncEnabled) syncTaskToNotion(task, 'update').catch(err => console.error(err));
+                if (notionSyncEnabled) syncTaskToNotion(task, 'update');
             }
         }
 
@@ -2775,7 +2987,7 @@ ${error.message}`);
                 
                 // Sync to Notion if enabled
                 if (notionSyncEnabled) {
-                    syncTaskToNotion(draggedTask, 'update').catch(err => console.error(err));
+                    syncTaskToNotion(draggedTask, 'update');
                 }
             } else {
                 // Reordering within the same day
@@ -2803,7 +3015,7 @@ ${error.message}`);
                     
                     // Sync to Notion if enabled
                     if (notionSyncEnabled) {
-                        syncTaskToNotion(draggedTask, 'update').catch(err => console.error(err));
+                        syncTaskToNotion(draggedTask, 'update');
                     }
                 }
             }
@@ -2813,26 +3025,21 @@ ${error.message}`);
 
         // Notion Sync Functions
         async function syncTaskToNotion(task, action = 'create') {
+            const config = getNotionConfig();
+
+            if (!config) {
+                console.log('No Notion config saved - task not synced');
+                return;
+            }
+
             try {
-                const payload = {
-                    text: task.text,
-                    completed: !!task.completed,
-                    status: task.completed ? 'Done' : 'Not started',
-                    dueDate: getDueDateFromOffset(task.dayOffset),
-                    category: task.category || 'Brain Dump'
-                };
-
                 if (action === 'create') {
-                    const result = await notionRequest('/tasks', {
-                        method: 'POST',
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (result?.notionId) {
-                        task.notionId = result.notionId;
+                    const created = await createNotionTask(task, config);
+                    if (created?.id) {
+                        task.notionId = created.id;
                         saveTasks();
                     }
-                    return result;
+                    return created;
                 }
 
                 if (action === 'update') {
@@ -2840,37 +3047,41 @@ ${error.message}`);
                         return await syncTaskToNotion(task, 'create');
                     }
 
-                    return await notionRequest(`/${encodeURIComponent(task.notionId)}`, {
+                    return await notionApiRequest(`/pages/${task.notionId}`, {
                         method: 'PATCH',
-                        body: JSON.stringify(payload)
-                    });
+                        body: JSON.stringify({
+                            properties: buildNotionProperties(task, config)
+                        })
+                    }, config.token);
                 }
 
                 if (action === 'delete') {
-                    if (!task.notionId) return { ok: true, skipped: true };
-                    return await notionRequest(`/${encodeURIComponent(task.notionId)}`, {
-                        method: 'DELETE'
-                    });
+                    if (!task.notionId) {
+                        return { ok: true, skipped: true };
+                    }
+
+                    return await notionApiRequest(`/pages/${task.notionId}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({
+                            in_trash: true
+                        })
+                    }, config.token);
                 }
             } catch (error) {
-                console.error(`Notion ${action} failed:`, error);
+                console.error('Notion task sync error:', error);
                 throw error;
             }
         }
 
         function getDueDateFromOffset(offset) {
-            if (offset === 999 || offset === null || offset === undefined) {
-                return null;
-            }
             const date = new Date();
-            date.setHours(0, 0, 0, 0);
+            if (offset === 999) {
+                return null; // Someday = no due date
+            }
             date.setDate(date.getDate() + offset);
             return date.toISOString().split('T')[0];
         }
 
-        document.getElementById('backendUrlModal').addEventListener('click', function(e) {
-            if (e.target === this) closeBackendUrlModal();
-        });
         // Initialize on load
         init();
     </script>
