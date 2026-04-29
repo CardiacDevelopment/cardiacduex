@@ -1,124 +1,1008 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="background:#0a0a0a;">
 <head>
-  <meta charset="UTF-8" />
-  <title>Cardiac Core - Notion Connect</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0a0a0a;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    .card {
-      background: #1a1a1a;
-      padding: 30px;
-      border-radius: 12px;
-      text-align: center;
-      width: 340px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-    }
-    h2 { margin: 0 0 20px; }
-    button {
-      padding: 14px 20px;
-      border-radius: 8px;
-      border: none;
-      background: #00ff66;
-      color: black;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .status {
-      margin-top: 15px;
-      font-size: 14px;
-      color: #bdbdbd;
-      line-height: 1.4;
-      min-height: 42px;
-    }
-    .success { color: #00ff66; }
-    .error { color: #ff6b6b; }
-    .subtle { color: #888; font-size: 12px; margin-top: 8px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>Cardiac Core</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #0a0a0a;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --accent-green: #00ff66;
+            --accent-green-dark: #00cc52;
+            --border-color: #333333;
+            --task-bg: #252525;
+            color-scheme: dark;
+        }
+
+        html, body {
+            background: #0a0a0a !important;
+            color: #ffffff !important;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-primary);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .date-display {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 24px;
+            padding: 4px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            padding: 4px 12px;
+            background: var(--task-bg);
+            border-radius: 20px;
+            margin-right: 10px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+        }
+
+        .status-dot.disconnected {
+            background: #888888;
+        }
+
+        .mobile-view {
+            display: block;
+            padding: 0;
+            overflow-y: auto;
+            height: calc(100vh - 110px);
+            padding-bottom: 20px;
+        }
+
+        .day-column {
+            background: var(--bg-secondary);
+            min-height: calc(100vh - 200px);
+            padding: 20px;
+        }
+
+        .day-header {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-bottom: 100px;
+        }
+
+        .task-item {
+            background: var(--task-bg);
+            border-left: 3px solid var(--accent-green);
+            padding: 14px 16px;
+            border-radius: 4px;
+            font-size: 15px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.2s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .task-item:active {
+            background: #2a2a2a;
+        }
+
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent-green);
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+
+        .task-checkbox.checked {
+            background: var(--accent-green);
+            position: relative;
+        }
+
+        .task-checkbox.checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--bg-primary);
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .task-text {
+            flex: 1;
+            line-height: 1.4;
+        }
+
+        .task-text.completed {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+
+        .task-category {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .category-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            background: var(--accent-green);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 12px 20px;
+            border-top: 1px solid var(--accent-green-dark);
+        }
+
+        .nav-item {
+            background: none;
+            border: none;
+            color: var(--bg-primary);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background 0.2s ease;
+        }
+
+        .nav-item.active {
+            background: var(--bg-primary);
+            color: var(--accent-green);
+        }
+
+        .nav-item:active {
+            opacity: 0.8;
+        }
+
+        .add-task-btn {
+            width: 48px;
+            height: 48px;
+            background: var(--bg-primary);
+            border: none;
+            border-radius: 50%;
+            color: var(--accent-green);
+            font-size: 28px;
+            font-weight: 300;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .add-task-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Day Navigation (mobile) */
+        .day-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .day-nav button {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .current-day {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Add task input */
+        .add-task-input {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            right: 20px;
+            background: var(--task-bg);
+            border: 2px solid var(--accent-green);
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 15px;
+            color: var(--text-primary);
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        .add-task-input:focus {
+            outline: none;
+        }
+
+        .add-task-input.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            background: var(--bg-primary);
+            border-left: 1px solid var(--border-color);
+            transition: right 0.3s ease;
+            z-index: 200;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .settings-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .setting-item {
+            margin-bottom: 20px;
+        }
+
+        .setting-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .setting-button {
+            width: 100%;
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .setting-button:hover {
+            background: #2a2a2a;
+        }
+
+        .setting-button.accent {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border: none;
+            font-weight: 600;
+        }
+
+        .setting-button.accent:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            padding: 20px;
+        }
+
+        .modal.visible {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-button:active {
+            opacity: 0.8;
+        }
+
+        .modal-button.cancel {
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .modal-button.confirm {
+            background: var(--accent-green);
+            border: none;
+            color: var(--bg-primary);
+            font-weight: 600;
+        }
+
+        .pull-indicator {
+            text-align: center;
+            padding: 0;
+            font-size: 12px;
+            color: var(--accent-green);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease, padding 0.2s ease;
+        }
+        .pull-indicator.visible {
+            max-height: 48px;
+            padding: 14px 0;
+        }
+
+        /* Light mode */
+        body.light-mode {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text-primary: #111111;
+            --text-secondary: #666666;
+            --border-color: #dddddd;
+            --task-bg: #f0f0f0;
+            background: #f5f5f5 !important;
+            color: #111111 !important;
+        }
+
+        /* Auth Modal */
+        .auth-modal {
+            text-align: center;
+        }
+
+        .auth-modal p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .notion-connect-btn {
+            width: 100%;
+            padding: 14px;
+            background: #000000;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+
+        .notion-connect-btn:hover {
+            background: #1a1a1a;
+        }
+
+        .sync-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Connect Notion</h2>
-    <button id="connectBtn" onclick="connectNotionOAuth()">Connect with Notion</button>
-    <div class="status" id="statusText">Checking connection…</div>
-    <div class="subtle" id="workspaceText"></div>
-  </div>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-top">
+            <div class="date-display">CARDIAC CORE</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div class="status-indicator">
+                    <div class="status-dot disconnected" id="statusDot"></div>
+                    <span id="statusText">Offline</span>
+                </div>
+                <button class="menu-btn" onclick="toggleSettings()">☰</button>
+            </div>
+        </div>
+    </div>
 
-  <script>
-    var NOTION_API_BASE = '/api/notion';
-    var notionAuthStateKey = 'notion_oauth_state';
+    <!-- Day Navigation (Mobile) -->
+    <div class="day-nav">
+        <button onclick="changeDay(-1)">←</button>
+        <div style="text-align: center;">
+            <div class="current-day" id="currentDay">TODAY</div>
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;" id="dateDisplay">Friday, April 17</div>
+        </div>
+        <button onclick="changeDay(1)">→</button>
+    </div>
 
-    async function connectNotionOAuth() {
-      try {
-        const state = (window.crypto && crypto.randomUUID)
-          ? crypto.randomUUID()
-          : String(Date.now());
+    <!-- Mobile View -->
+    <div class="mobile-view">
+        <div id="pullIndicator" class="pull-indicator">↓ Release to sync Notion</div>
+        <div class="day-column">
+            <div class="task-list" id="mobileTaskList"></div>
+        </div>
+    </div>
 
-        sessionStorage.setItem(notionAuthStateKey, state);
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="switchView('today')">TODAY</button>
+        <button class="add-task-btn" onclick="showAddTask()">+</button>
+        <button class="nav-item" onclick="switchView('tasks')">TASKS</button>
+    </div>
 
-        const res = await fetch(`${NOTION_API_BASE}/auth-url?state=${encodeURIComponent(state)}`);
-        const data = await res.json();
+    <!-- Add Task Input -->
+    <input type="text" class="add-task-input" id="addTaskInput" placeholder="Add a task..." />
 
-        if (!res.ok || !data.url) {
-          throw new Error(data.error || 'Failed to get auth URL');
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <div class="settings-title">Settings</div>
+            <button class="close-btn" onclick="toggleSettings()">×</button>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-label">Notion Integration</div>
+            <button class="setting-button accent" id="notionAuthBtn" onclick="initNotionAuth()">
+                Connect with Notion
+            </button>
+            <div class="sync-status" id="notionStatus"></div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-label">Sync</div>
+            <button class="setting-button" onclick="syncFromNotion()" id="syncBtn">
+                Pull from Notion
+            </button>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-label">Data</div>
+            <button class="setting-button" onclick="exportTasks()">Export Tasks</button>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div class="modal" id="authModal">
+        <div class="modal-content auth-modal">
+            <div class="modal-title">Connect Notion</div>
+            <p>Sync your tasks with Notion for seamless integration across all your devices.</p>
+            <button class="notion-connect-btn" onclick="redirectToNotionAuth()">
+                Connect with Notion
+            </button>
+            <button class="modal-button cancel" onclick="closeAuthModal()" style="width: 100%;">Continue Offline</button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentDayOffset = 0;
+        let notionConnected = false;
+        let tasks = [];
+
+        const categoryColors = {
+            'Brain Dump': '#888780',
+            'Personal': '#378ADD',
+            'Cardiac': '#d4537e',
+            'Benefits Board': '#EF9F27',
+            'Property Management': '#639922',
+            'Estate': '#BA7517',
+            'Acquisitions': '#7F77DD',
+            'Growth': '#1D9E75',
+            'Research': '#888780'
+        };
+
+        // Initialize
+        async function init() {
+            loadTasks();
+            updateDateDisplay();
+            renderTasks();
+            
+            // Check Notion connection status
+            await checkNotionStatus();
+            
+            // Handle URL params for OAuth callback
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('code')) {
+                // OAuth callback detected — check status will handle it
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            // Handle add task input
+            const addTaskInput = document.getElementById('addTaskInput');
+            addTaskInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && addTaskInput.value.trim()) {
+                    addTask(addTaskInput.value.trim());
+                    addTaskInput.value = '';
+                    addTaskInput.classList.remove('visible');
+                }
+            });
+
+            addTaskInput.addEventListener('blur', () => {
+                setTimeout(() => addTaskInput.classList.remove('visible'), 200);
+            });
+
+            initPullToRefresh();
         }
 
-        window.location.assign(data.url);
-      } catch (err) {
-        setStatus(`Connect with Notion failed: ${err.message}`, 'error');
-      }
-    }
+        // Check Notion connection status
+        async function checkNotionStatus() {
+            try {
+                const response = await fetch('/api/notion/status');
+                
+                // Check if response is ok
+                if (!response.ok) {
+                    console.error('Status check failed:', response.status);
+                    notionConnected = false;
+                    updateConnectionUI();
+                    return;
+                }
 
-    function setStatus(message, kind) {
-      const el = document.getElementById('statusText');
-      el.textContent = message;
-      el.className = `status ${kind || ''}`;
-    }
+                // Get text first, then parse
+                const text = await response.text();
+                if (!text) {
+                    notionConnected = false;
+                    updateConnectionUI();
+                    return;
+                }
 
-    async function refreshStatus() {
-      try {
-        const res = await fetch(`${NOTION_API_BASE}/status`, { credentials: 'same-origin' });
-        const data = await res.json();
-
-        if (data.connected) {
-          setStatus('Connected to Notion', 'success');
-          document.getElementById('workspaceText').textContent =
-            data.workspace_name ? `Workspace: ${data.workspace_name}` : '';
-          document.getElementById('connectBtn').textContent = 'Reconnect Notion';
-        } else {
-          setStatus('Click to authenticate', '');
-          document.getElementById('workspaceText').textContent = '';
+                const data = JSON.parse(text);
+                notionConnected = data.connected === true;
+                updateConnectionUI();
+                
+                // If connected, show notification
+                if (notionConnected) {
+                    console.log('Notion connected');
+                    // Auto-sync tasks
+                    await syncFromNotion();
+                }
+            } catch (error) {
+                console.error('Error checking Notion status:', error);
+                notionConnected = false;
+                updateConnectionUI();
+            }
         }
-      } catch (err) {
-        setStatus(`Status check failed: ${err.message}`, 'error');
-      }
-    }
 
-    function handleQueryParams() {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('notion_connected') === '1') {
-        setStatus('Connected to Notion', 'success');
-      } else if (params.get('error')) {
-        setStatus(`Connect with Notion failed: ${params.get('error')}`, 'error');
-      }
-      if (params.has('notion_connected') || params.has('error')) {
-        const cleanUrl = `${window.location.origin}${window.location.pathname}`;
-        window.history.replaceState({}, '', cleanUrl);
-      }
-    }
+        function updateConnectionUI() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const authBtn = document.getElementById('notionAuthBtn');
+            const notionStatus = document.getElementById('notionStatus');
 
-    handleQueryParams();
-    refreshStatus();
-  </script>
+            if (notionConnected) {
+                statusDot.classList.remove('disconnected');
+                statusText.textContent = 'Synced';
+                authBtn.textContent = '✓ Notion Connected';
+                notionStatus.textContent = 'Last sync: just now';
+            } else {
+                statusDot.classList.add('disconnected');
+                statusText.textContent = 'Offline';
+                authBtn.textContent = 'Connect with Notion';
+                notionStatus.textContent = 'Not connected';
+            }
+        }
+
+        // Notion OAuth
+        async function initNotionAuth() {
+            try {
+                const response = await fetch('/api/notion/auth-url');
+                const data = await response.json();
+                
+                if (data.authUrl) {
+                    window.location.href = data.authUrl;
+                } else {
+                    alert('Error: Could not generate auth URL');
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                alert('Error initiating Notion authentication');
+            }
+        }
+
+        function redirectToNotionAuth() {
+            initNotionAuth();
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.remove('visible');
+        }
+
+        // Tasks
+        function loadTasks() {
+            const saved = localStorage.getItem('cardiacTasks');
+            if (saved) {
+                tasks = JSON.parse(saved);
+            } else {
+                tasks = [
+                    {
+                        id: 1,
+                        text: 'Send art and Gayla email update',
+                        completed: false,
+                        dayOffset: 0,
+                        category: 'Personal',
+                        order: 0,
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 2,
+                        text: 'Call Aaron',
+                        completed: false,
+                        dayOffset: 0,
+                        category: 'Personal',
+                        order: 1,
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 3,
+                        text: 'Message Aptive',
+                        completed: false,
+                        dayOffset: 0,
+                        category: 'Property Management',
+                        order: 2,
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 4,
+                        text: 'Buy mom iPad',
+                        completed: false,
+                        dayOffset: 0,
+                        category: 'Personal',
+                        order: 3,
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+                saveTasks();
+            }
+        }
+
+        function saveTasks() {
+            localStorage.setItem('cardiacTasks', JSON.stringify(tasks));
+        }
+
+        function updateDateDisplay() {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            const date = new Date();
+            date.setDate(date.getDate() + currentDayOffset);
+            
+            const dayName = days[date.getDay()];
+            const monthName = months[date.getMonth()];
+            const dayNum = date.getDate();
+            
+            let label = currentDayOffset === 0 ? 'TODAY' : currentDayOffset === -1 ? 'YESTERDAY' : currentDayOffset === 1 ? 'TOMORROW' : dayName.toUpperCase();
+            
+            document.getElementById('currentDay').textContent = label;
+            document.getElementById('dateDisplay').textContent = `${dayName}, ${monthName} ${dayNum}`;
+        }
+
+        function changeDay(offset) {
+            currentDayOffset += offset;
+            updateDateDisplay();
+            renderTasks();
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('mobileTaskList');
+            const dayTasks = tasks
+                .filter(t => t.dayOffset === currentDayOffset)
+                .sort((a, b) => (a.order || 0) - (b.order || 0));
+            
+            if (dayTasks.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 40px 20px; font-size: 14px;">No tasks for this day</div>';
+                return;
+            }
+
+            list.innerHTML = dayTasks.map(task => {
+                const categoryColor = categoryColors[task.category] || '#888780';
+                return `
+                    <div class="task-item" onclick="toggleTask(${task.id})">
+                        <div class="task-checkbox ${task.completed ? 'checked' : ''}"></div>
+                        <div class="task-text ${task.completed ? 'completed' : ''}">
+                            ${task.text}
+                            <div class="task-category">
+                                <span class="category-dot" style="background-color: ${categoryColor}"></span>
+                                ${task.category}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addTask(text) {
+            const task = {
+                id: Date.now(),
+                text: text,
+                completed: false,
+                dayOffset: currentDayOffset,
+                category: 'Personal',
+                order: tasks.filter(t => t.dayOffset === currentDayOffset).length,
+                createdAt: new Date().toISOString()
+            };
+            tasks.push(task);
+            saveTasks();
+            renderTasks();
+            
+            // Sync to Notion if connected
+            if (notionConnected) {
+                pushTaskToNotion(task);
+            }
+        }
+
+        function toggleTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                saveTasks();
+                renderTasks();
+                
+                if (notionConnected) {
+                    pushTaskToNotion(task);
+                }
+            }
+        }
+
+        function showAddTask() {
+            const input = document.getElementById('addTaskInput');
+            input.classList.add('visible');
+            input.focus();
+        }
+
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('open');
+        }
+
+        // Notion Sync
+        async function syncFromNotion() {
+            if (!notionConnected) {
+                alert('Not connected to Notion');
+                return;
+            }
+
+            const syncBtn = document.getElementById('syncBtn');
+            syncBtn.disabled = true;
+            syncBtn.textContent = 'Syncing...';
+
+            try {
+                const response = await fetch('/api/notion/sync');
+                if (!response.ok) {
+                    throw new Error(`Sync failed: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                // Merge fetched tasks with local ones
+                if (data.tasks && Array.isArray(data.tasks)) {
+                    // Update tasks from Notion
+                    data.tasks.forEach(remoteTask => {
+                        const existingIdx = tasks.findIndex(t => t.notionId === remoteTask.id);
+                        if (existingIdx >= 0) {
+                            // Update existing task
+                            tasks[existingIdx] = {
+                                ...tasks[existingIdx],
+                                text: remoteTask.title,
+                                completed: remoteTask.completed,
+                                category: remoteTask.category || 'Personal'
+                            };
+                        } else {
+                            // Add new task from Notion
+                            tasks.push({
+                                id: Date.now(),
+                                notionId: remoteTask.id,
+                                text: remoteTask.title,
+                                completed: remoteTask.completed,
+                                dayOffset: remoteTask.dayOffset || 999,
+                                category: remoteTask.category || 'Personal',
+                                order: 0,
+                                createdAt: new Date().toISOString()
+                            });
+                        }
+                    });
+
+                    saveTasks();
+                    renderTasks();
+                    alert(`Synced ${data.tasks.length} tasks from Notion`);
+                }
+            } catch (error) {
+                console.error('Sync error:', error);
+                alert('Sync failed: ' + error.message);
+            } finally {
+                syncBtn.disabled = false;
+                syncBtn.textContent = 'Pull from Notion';
+            }
+        }
+
+        async function pushTaskToNotion(task) {
+            if (!notionConnected) return;
+
+            try {
+                await fetch('/api/notion/push-task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(task)
+                });
+            } catch (error) {
+                console.error('Push error:', error);
+            }
+        }
+
+        function exportTasks() {
+            const dataStr = JSON.stringify(tasks, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `cardiac-core-tasks-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+
+        function switchView(view) {
+            // Placeholder for future view switching
+            console.log('Switch to:', view);
+        }
+
+        function initPullToRefresh() {
+            const mobileView = document.querySelector('.mobile-view');
+            const indicator = document.getElementById('pullIndicator');
+            let startY = 0;
+            let pulling = false;
+
+            mobileView.addEventListener('touchstart', e => {
+                if (mobileView.scrollTop === 0) {
+                    startY = e.touches[0].clientY;
+                    pulling = true;
+                }
+            }, { passive: true });
+
+            mobileView.addEventListener('touchmove', e => {
+                if (!pulling) return;
+                const dy = e.touches[0].clientY - startY;
+                if (dy > 50) indicator.classList.add('visible');
+                else indicator.classList.remove('visible');
+            }, { passive: true });
+
+            mobileView.addEventListener('touchend', () => {
+                if (indicator.classList.contains('visible') && notionConnected) {
+                    indicator.textContent = '↻ Syncing...';
+                    syncFromNotion().finally(() => {
+                        indicator.classList.remove('visible');
+                        indicator.textContent = '↓ Release to sync Notion';
+                    });
+                }
+                pulling = false;
+            });
+        }
+
+        // Initialize on load
+        init();
+    </script>
 </body>
 </html>
