@@ -537,7 +537,7 @@
         <button onclick="changeDay(-1)">←</button>
         <div style="text-align: center;">
             <div class="current-day" id="currentDay">TODAY</div>
-            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;" id="dateDisplay">Friday, April 17</div>
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;" id="dateDisplay">&nbsp;</div>
         </div>
         <button onclick="changeDay(1)">→</button>
     </div>
@@ -569,10 +569,10 @@
 
         <div class="setting-item">
             <div class="setting-label">Notion Integration</div>
-            <button class="setting-button accent" id="notionAuthBtn" onclick="initNotionAuth()">
-                Connect with Notion
+            <button class="setting-button accent" id="notionAuthBtn" onclick="checkNotionStatus()">
+                Check connection
             </button>
-            <div class="sync-status" id="notionStatus"></div>
+            <div class="sync-status" id="notionStatus">Checking…</div>
         </div>
 
         <div class="setting-item">
@@ -585,18 +585,6 @@
         <div class="setting-item">
             <div class="setting-label">Data</div>
             <button class="setting-button" onclick="exportTasks()">Export Tasks</button>
-        </div>
-    </div>
-
-    <!-- Auth Modal -->
-    <div class="modal" id="authModal">
-        <div class="modal-content auth-modal">
-            <div class="modal-title">Connect Notion</div>
-            <p>Sync your tasks with Notion for seamless integration across all your devices.</p>
-            <button class="notion-connect-btn" onclick="redirectToNotionAuth()">
-                Connect with Notion
-            </button>
-            <button class="modal-button cancel" onclick="closeAuthModal()" style="width: 100%;">Continue Offline</button>
         </div>
     </div>
 
@@ -623,16 +611,9 @@
             loadTasks();
             updateDateDisplay();
             renderTasks();
-            
-            // Check Notion connection status
+
+            // Check Notion connection status (uses server-side env-var token)
             await checkNotionStatus();
-            
-            // Handle URL params for OAuth callback
-            const params = new URLSearchParams(window.location.search);
-            if (params.has('code')) {
-                // OAuth callback detected — check status will handle it
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
 
             // Handle add task input
             const addTaskInput = document.getElementById('addTaskInput');
@@ -651,45 +632,36 @@
             initPullToRefresh();
         }
 
-        // Check Notion connection status
+        // Check Notion connection status (single-user / server-token mode)
         async function checkNotionStatus() {
+            const notionStatus = document.getElementById('notionStatus');
+            if (notionStatus) notionStatus.textContent = 'Checking…';
+
             try {
-                const response = await fetch('/api/notion/status');
-                
-                // Check if response is ok
+                const response = await fetch('/api/notion/status', {
+                    headers: { 'Accept': 'application/json' },
+                });
+
                 if (!response.ok) {
-                    console.error('Status check failed:', response.status);
-                    notionConnected = false;
-                    updateConnectionUI();
-                    return;
+                    throw new Error(`Status check failed (${response.status})`);
                 }
 
-                // Get text first, then parse
-                const text = await response.text();
-                if (!text) {
-                    notionConnected = false;
-                    updateConnectionUI();
-                    return;
-                }
-
-                const data = JSON.parse(text);
+                const data = await response.json();
                 notionConnected = data.connected === true;
-                updateConnectionUI();
-                
-                // If connected, show notification
+                updateConnectionUI(data);
+
                 if (notionConnected) {
-                    console.log('Notion connected');
-                    // Auto-sync tasks
-                    await syncFromNotion();
+                    // Auto-sync on first successful connection check
+                    await syncFromNotion({ silent: true });
                 }
             } catch (error) {
                 console.error('Error checking Notion status:', error);
                 notionConnected = false;
-                updateConnectionUI();
+                updateConnectionUI({ connected: false, error: error.message });
             }
         }
 
-        function updateConnectionUI() {
+        function updateConnectionUI(data = {}) {
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
             const authBtn = document.getElementById('notionAuthBtn');
@@ -699,38 +671,17 @@
                 statusDot.classList.remove('disconnected');
                 statusText.textContent = 'Synced';
                 authBtn.textContent = '✓ Notion Connected';
-                notionStatus.textContent = 'Last sync: just now';
+                notionStatus.textContent = data.databaseTitle
+                    ? `Connected to "${data.databaseTitle}"`
+                    : 'Connected';
             } else {
                 statusDot.classList.add('disconnected');
                 statusText.textContent = 'Offline';
-                authBtn.textContent = 'Connect with Notion';
-                notionStatus.textContent = 'Not connected';
+                authBtn.textContent = 'Retry connection';
+                notionStatus.textContent = data.error
+                    ? `Not connected: ${data.error}`
+                    : 'Not connected';
             }
-        }
-
-        // Notion OAuth
-        async function initNotionAuth() {
-            try {
-                const response = await fetch('/api/notion/auth-url');
-                const data = await response.json();
-                
-                if (data.authUrl) {
-                    window.location.href = data.authUrl;
-                } else {
-                    alert('Error: Could not generate auth URL');
-                }
-            } catch (error) {
-                console.error('Auth error:', error);
-                alert('Error initiating Notion authentication');
-            }
-        }
-
-        function redirectToNotionAuth() {
-            initNotionAuth();
-        }
-
-        function closeAuthModal() {
-            document.getElementById('authModal').classList.remove('visible');
         }
 
         // Tasks
@@ -881,62 +832,72 @@
         }
 
         // Notion Sync
-        async function syncFromNotion() {
+        async function syncFromNotion({ silent = false } = {}) {
             if (!notionConnected) {
-                alert('Not connected to Notion');
+                if (!silent) alert('Not connected to Notion');
                 return;
             }
 
             const syncBtn = document.getElementById('syncBtn');
-            syncBtn.disabled = true;
-            syncBtn.textContent = 'Syncing...';
+            if (syncBtn) {
+                syncBtn.disabled = true;
+                syncBtn.textContent = 'Syncing...';
+            }
 
             try {
-                const response = await fetch('/api/notion/sync');
+                const response = await fetch('/api/notion/sync', {
+                    headers: { 'Accept': 'application/json' },
+                });
                 if (!response.ok) {
-                    throw new Error(`Sync failed: ${response.statusText}`);
+                    let detail = response.statusText;
+                    try {
+                        const err = await response.json();
+                        if (err.error) detail = err.error;
+                    } catch { /* keep statusText */ }
+                    throw new Error(detail || 'Sync failed');
                 }
 
                 const data = await response.json();
-                
-                // Merge fetched tasks with local ones
-                if (data.tasks && Array.isArray(data.tasks)) {
-                    // Update tasks from Notion
-                    data.tasks.forEach(remoteTask => {
-                        const existingIdx = tasks.findIndex(t => t.notionId === remoteTask.id);
-                        if (existingIdx >= 0) {
-                            // Update existing task
-                            tasks[existingIdx] = {
-                                ...tasks[existingIdx],
-                                text: remoteTask.title,
-                                completed: remoteTask.completed,
-                                category: remoteTask.category || 'Personal'
-                            };
-                        } else {
-                            // Add new task from Notion
-                            tasks.push({
-                                id: Date.now(),
-                                notionId: remoteTask.id,
-                                text: remoteTask.title,
-                                completed: remoteTask.completed,
-                                dayOffset: remoteTask.dayOffset || 999,
-                                category: remoteTask.category || 'Personal',
-                                order: 0,
-                                createdAt: new Date().toISOString()
-                            });
-                        }
-                    });
+                const remoteTasks = Array.isArray(data.tasks) ? data.tasks : [];
 
-                    saveTasks();
-                    renderTasks();
-                    alert(`Synced ${data.tasks.length} tasks from Notion`);
+                // Merge remote tasks. Use a counter-based ID to avoid Date.now() collisions
+                // when multiple new tasks arrive in the same millisecond.
+                let nextLocalId = Date.now();
+                for (const remote of remoteTasks) {
+                    const idx = tasks.findIndex(t => t.notionId === remote.id);
+                    if (idx >= 0) {
+                        tasks[idx] = {
+                            ...tasks[idx],
+                            text: remote.title,
+                            completed: remote.completed,
+                            category: remote.category || tasks[idx].category || 'Brain Dump',
+                            dayOffset: remote.dayOffset != null ? remote.dayOffset : tasks[idx].dayOffset,
+                        };
+                    } else {
+                        tasks.push({
+                            id: nextLocalId++,
+                            notionId: remote.id,
+                            text: remote.title,
+                            completed: remote.completed,
+                            dayOffset: remote.dayOffset != null ? remote.dayOffset : 999,
+                            category: remote.category || 'Brain Dump',
+                            order: tasks.length,
+                            createdAt: new Date().toISOString(),
+                        });
+                    }
                 }
+
+                saveTasks();
+                renderTasks();
+                if (!silent) alert(`Synced ${remoteTasks.length} tasks from Notion`);
             } catch (error) {
                 console.error('Sync error:', error);
-                alert('Sync failed: ' + error.message);
+                if (!silent) alert('Sync failed: ' + error.message);
             } finally {
-                syncBtn.disabled = false;
-                syncBtn.textContent = 'Pull from Notion';
+                if (syncBtn) {
+                    syncBtn.disabled = false;
+                    syncBtn.textContent = 'Pull from Notion';
+                }
             }
         }
 
@@ -944,11 +905,25 @@
             if (!notionConnected) return;
 
             try {
-                await fetch('/api/notion/push-task', {
+                const response = await fetch('/api/notion/push-task', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(task)
+                    body: JSON.stringify(task),
                 });
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    console.error('Push failed:', err.error || response.statusText);
+                    return;
+                }
+                const data = await response.json();
+                // If this was a create, store the returned notionId on the local task.
+                if (data.task && data.task.id && !task.notionId) {
+                    const local = tasks.find(t => t.id === task.id);
+                    if (local) {
+                        local.notionId = data.task.id;
+                        saveTasks();
+                    }
+                }
             } catch (error) {
                 console.error('Push error:', error);
             }
