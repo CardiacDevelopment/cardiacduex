@@ -268,6 +268,26 @@
             padding: 8px;
         }
 
+        .day-nav .day-nav-center {
+            text-align: center;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: inherit;
+            transition: background 0.15s ease;
+        }
+
+        .day-nav .day-nav-center:active {
+            background: var(--task-bg);
+        }
+
+        .day-nav-subdate {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
         .current-day {
             font-size: 14px;
             font-weight: 600;
@@ -771,6 +791,12 @@
             color: var(--bg-primary);
         }
 
+        .day-chip.active {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
         /* Action menu (shares overlay/sheet style with longpress picker) */
         .action-menu-overlay {
             position: fixed;
@@ -882,23 +908,62 @@
             opacity: 0;
         }
 
-        /* Pull-indicator color in light mode handled by var(--accent-green) */
-
-        .pull-indicator {
-            text-align: center;
-            padding: 0;
-            font-size: 12px;
-            color: var(--accent-green);
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.2s ease, padding 0.2s ease;
+        /* Drag handle on day-view task rows */
+        .drag-handle {
+            color: var(--text-secondary);
+            font-size: 18px;
+            line-height: 1;
+            padding: 4px 8px;
+            cursor: grab;
+            opacity: 0.5;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none; /* let our touch handler own vertical drag */
+            flex-shrink: 0;
+            align-self: center;
         }
-        .pull-indicator.visible {
-            max-height: 48px;
-            padding: 14px 0;
+
+        .drag-handle:active {
+            cursor: grabbing;
+            opacity: 0.9;
+        }
+
+        /* "Lift" state on the wrapper while it's being dragged. */
+        .task-item-wrapper.dragging {
+            opacity: 0.6;
+            z-index: 50;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            transform: scale(1.02);
+        }
+
+        /* Drop target highlight. */
+        .task-item-wrapper.drag-over .task-item {
+            border-left-color: var(--accent-green);
+            box-shadow: inset 0 2px 0 var(--accent-green);
+        }
+
+        /* Schedule button on board tasks */
+        .task-schedule-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            flex-shrink: 0;
+            align-self: center;
+            padding: 0;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .task-schedule-btn:active {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
         }
 
         /* Light mode */
@@ -968,16 +1033,15 @@
     <!-- Day Navigation (Mobile) -->
     <div class="day-nav" id="dayNav">
         <button onclick="changeDay(-1)">←</button>
-        <div style="text-align: center;">
+        <button class="day-nav-center" onclick="openDayPicker()" aria-label="Pick a day">
             <div class="current-day" id="currentDay">TODAY</div>
-            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;" id="dateDisplay">&nbsp;</div>
-        </div>
+            <div class="day-nav-subdate" id="dateDisplay">&nbsp;</div>
+        </button>
         <button onclick="changeDay(1)">→</button>
     </div>
 
     <!-- Mobile View -->
     <div class="mobile-view" id="mobileView">
-        <div id="pullIndicator" class="pull-indicator">↓ Release to sync Notion</div>
         <div class="day-column">
             <div class="task-list" id="mobileTaskList"></div>
         </div>
@@ -1068,6 +1132,14 @@
         </div>
     </div>
 
+    <!-- Day Picker (tap day-nav header) -->
+    <div class="longpress-picker-overlay" id="dayPicker">
+        <div class="longpress-picker">
+            <div class="longpress-picker-title">Jump to day</div>
+            <div class="day-chips" id="dayPickerChips"></div>
+        </div>
+    </div>
+
     <script>
         // State
         let currentDayOffset = 0;
@@ -1115,7 +1187,6 @@
 
             initTaskBoardEvents();
             initOverlayDismissals();
-            initPullToRefresh();
         }
 
         // Check Notion connection status (single-user / server-token mode)
@@ -1261,7 +1332,7 @@
                 const categoryColor = categoryColors[task.category] || '#888780';
                 return `
                     <div class="task-item-wrapper" data-task-id="${task.id}">
-                        <div class="task-swipe-done">✓ DONE</div>
+                        <div class="task-swipe-done">→ NEXT DAY</div>
                         <div class="task-swipe-action">← UNSCHEDULE</div>
                         <div class="task-item">
                             <div class="task-checkbox ${task.completed ? 'checked' : ''}"></div>
@@ -1272,6 +1343,7 @@
                                     ${escapeHtml(task.category)}
                                 </div>
                             </div>
+                            <div class="drag-handle" aria-label="Reorder">⠿</div>
                         </div>
                     </div>
                 `;
@@ -1558,6 +1630,7 @@
                         <div class="task-text ${task.completed ? 'completed' : ''}">
                             ${escapeHtml(task.text)}
                         </div>
+                        <button class="task-schedule-btn" data-action="schedule" aria-label="Schedule task">📅</button>
                     </div>
                 `).join('');
                 return `
@@ -1663,9 +1736,18 @@
             if (!board) return;
 
             board.addEventListener('click', (e) => {
+                const scheduleBtn = e.target.closest('.task-schedule-btn');
                 const addBtn = e.target.closest('.category-group-add');
                 const header = e.target.closest('.category-group-header');
 
+                // Schedule button on a task card → open day picker.
+                // Sits inside .task-item, so it runs before any task-card handling.
+                if (scheduleBtn) {
+                    e.stopPropagation();
+                    const taskEl = scheduleBtn.closest('.task-item[data-task-id]');
+                    if (taskEl) openLongpressPicker(Number(taskEl.dataset.taskId));
+                    return;
+                }
                 // Add button takes priority — it sits inside the header.
                 if (addBtn) {
                     e.stopPropagation();
@@ -1877,6 +1959,44 @@
             // 'cancel' or anything else: just dismiss (already done above)
         }
 
+        // ── Day Picker (tap day-nav header) ─────────────────────
+        // Bottom-sheet of chips for today + next 14 days. Capped at 14 to
+        // discourage "future planning anxiety" — schedule farther-out work via
+        // long-press → Reschedule on the task itself.
+        function openDayPicker() {
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const chips = document.getElementById('dayPickerChips');
+            chips.innerHTML = '';
+
+            for (let i = 0; i <= 14; i++) {
+                const d = new Date();
+                d.setDate(d.getDate() + i);
+                const label = i === 0 ? 'Today'
+                    : i === 1 ? 'Tomorrow'
+                    : `${dayNames[d.getDay()]} ${monthNames[d.getMonth()]} ${d.getDate()}`;
+                const chip = document.createElement('div');
+                chip.className = 'day-chip';
+                if (i === currentDayOffset) chip.classList.add('active');
+                chip.textContent = label;
+                chip.onclick = () => jumpToDay(i);
+                chips.appendChild(chip);
+            }
+
+            document.getElementById('dayPicker').classList.add('visible');
+        }
+
+        function closeDayPicker() {
+            document.getElementById('dayPicker').classList.remove('visible');
+        }
+
+        function jumpToDay(offset) {
+            currentDayOffset = offset;
+            updateDateDisplay();
+            renderTasks();
+            closeDayPicker();
+        }
+
         function initOverlayDismissals() {
             const editModal = document.getElementById('editModal');
             editModal.addEventListener('click', e => {
@@ -1895,6 +2015,10 @@
                 const btn = e.target.closest('.action-menu-item');
                 if (btn) handleActionMenuClick(btn.dataset.action);
             });
+            const dayPicker = document.getElementById('dayPicker');
+            dayPicker.addEventListener('click', e => {
+                if (e.target === dayPicker) closeDayPicker();
+            });
         }
 
         // ── Board-task gesture handling ─────────────────────────
@@ -1909,6 +2033,9 @@
             let startX = 0, startY = 0;
 
             item.addEventListener('touchstart', e => {
+                // Don't start gesture handling if the touch landed on a
+                // dedicated button — let those handle themselves.
+                if (e.target.closest && e.target.closest('.task-schedule-btn')) return;
                 if (!e.touches[0]) return;
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
@@ -1945,7 +2072,9 @@
                 if (!e.touches[0]) return;
                 const dx = e.touches[0].clientX - startX;
                 const dy = e.touches[0].clientY - startY;
-                if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                // 14px gives enough slack for natural finger pressure shift
+                // during a long-press; 10px was killing the timer too eagerly.
+                if (Math.abs(dx) > 14 || Math.abs(dy) > 14) {
                     mode = 'cancelled';
                     tapCount = 0;
                     clearTimeout(tapTimer);
@@ -1976,6 +2105,10 @@
             const taskItem = wrapper.querySelector('.task-item');
             if (!taskItem) return;
 
+            // Drag handle owns its touches — keep swipe code below from firing.
+            const handle = wrapper.querySelector('.drag-handle');
+            if (handle) attachDragHandleListeners(wrapper, handle);
+
             let startX = 0, startY = 0, currentX = 0;
             let isHorizontal = null;
             let longpressTimer = null;
@@ -1984,6 +2117,9 @@
             let touchHandled = false; // Block synthetic click after touch
 
             wrapper.addEventListener('touchstart', e => {
+                // If the touch started on the handle, it's a drag — bail out
+                // before swipe/longpress timers begin.
+                if (e.target.closest && e.target.closest('.drag-handle')) return;
                 if (!e.touches[0]) return;
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
@@ -2051,7 +2187,7 @@
                         setTimeout(() => unscheduleTask(taskId), 250);
                     } else if (currentX > 60) {
                         wrapper.classList.add('swipe-complete-right');
-                        setTimeout(() => toggleTask(taskId), 250);
+                        setTimeout(() => pushTaskToNextDay(taskId), 250);
                     } else {
                         taskItem.style.transition = 'transform 0.2s ease';
                         taskItem.style.transform = 'translateX(0)';
@@ -2090,6 +2226,135 @@
             if (notionConnected) pushTaskToNotion(task);
         }
 
+        // Bumps a scheduled task forward by one day. Used by swipe-right.
+        // If the task is unscheduled (Someday), it lands on today instead of
+        // staying in Someday — "next day" relative to nothing isn't meaningful.
+        function pushTaskToNextDay(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            const current = task.dayOffset;
+            const next = (current == null || current === 999) ? 0 : current + 1;
+            task.dayOffset = next;
+            task.order = tasks.filter(t => t.dayOffset === next && t.id !== taskId).length;
+            saveTasks();
+            renderActiveView();
+            if (notionConnected) pushTaskToNotion(task);
+        }
+
+        // ── Drag-handle reorder (touch-only) ────────────────────
+        // Long-press the handle to "lift" the row, drag vertically over another
+        // row, release to drop. We persist new order values and re-render.
+        function attachDragHandleListeners(wrapper, handle) {
+            let startY = 0;
+            let dragging = false;
+
+            handle.addEventListener('touchstart', e => {
+                e.stopPropagation();
+                if (!e.touches[0]) return;
+                dragging = true;
+                startY = e.touches[0].clientY;
+
+                wrapper.classList.add('dragging');
+                wrapper.style.transition = 'none';
+            }, { passive: true });
+
+            handle.addEventListener('touchmove', e => {
+                if (!dragging || !e.touches[0]) return;
+                e.stopPropagation();
+                e.preventDefault(); // keep page from scrolling while dragging
+
+                const dy = e.touches[0].clientY - startY;
+                wrapper.style.transform = `translateY(${dy}px) scale(1.02)`;
+
+                // Find what we're hovering over. Temporarily disable pointer
+                // events on our own wrapper so elementFromPoint sees through it.
+                wrapper.style.pointerEvents = 'none';
+                const el = document.elementFromPoint(
+                    e.touches[0].clientX,
+                    e.touches[0].clientY
+                );
+                wrapper.style.pointerEvents = '';
+
+                document.querySelectorAll('.task-item-wrapper').forEach(w => {
+                    w.classList.remove('drag-over');
+                });
+                const over = el && el.closest && el.closest('.task-item-wrapper');
+                if (over && over !== wrapper) over.classList.add('drag-over');
+            }, { passive: false });
+
+            handle.addEventListener('touchend', e => {
+                if (!dragging) return;
+                dragging = false;
+                e.stopPropagation();
+
+                // Find drop target before we remove the highlight class.
+                wrapper.style.pointerEvents = 'none';
+                const touch = e.changedTouches && e.changedTouches[0];
+                const el = touch
+                    ? document.elementFromPoint(touch.clientX, touch.clientY)
+                    : null;
+                wrapper.style.pointerEvents = '';
+                const over = el && el.closest && el.closest('.task-item-wrapper');
+
+                document.querySelectorAll('.task-item-wrapper').forEach(w => {
+                    w.classList.remove('drag-over');
+                });
+
+                // Snap back visually regardless — render with new order will
+                // place the item correctly if the drop landed on a target.
+                wrapper.classList.remove('dragging');
+                wrapper.style.transform = '';
+                wrapper.style.transition = '';
+
+                if (over && over !== wrapper) {
+                    const fromId = Number(wrapper.dataset.taskId);
+                    const toId = Number(over.dataset.taskId);
+                    reorderDayTasks(fromId, toId);
+                }
+            });
+
+            // Cancel cleanly if the OS interrupts us.
+            handle.addEventListener('touchcancel', () => {
+                if (!dragging) return;
+                dragging = false;
+                wrapper.classList.remove('dragging');
+                wrapper.style.transform = '';
+                wrapper.style.transition = '';
+                document.querySelectorAll('.task-item-wrapper').forEach(w => {
+                    w.classList.remove('drag-over');
+                });
+            });
+        }
+
+        // Move task `fromId` to occupy task `toId`'s slot (within the same day).
+        // Recomputes integer order values for everything in that day so they
+        // stay tidy, persists locally, and pushes the moved task to Notion.
+        function reorderDayTasks(fromId, toId) {
+            const from = tasks.find(t => t.id === fromId);
+            const to = tasks.find(t => t.id === toId);
+            if (!from || !to) return;
+            // Only allow reorder within the same day — cross-day moves should
+            // go through the day picker, not a vertical drag.
+            if (from.dayOffset !== to.dayOffset) return;
+
+            const dayTasks = tasks
+                .filter(t => t.dayOffset === from.dayOffset)
+                .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            const fromIdx = dayTasks.indexOf(from);
+            const toIdx = dayTasks.indexOf(to);
+            if (fromIdx < 0 || toIdx < 0 || fromIdx === toIdx) return;
+
+            dayTasks.splice(fromIdx, 1);
+            dayTasks.splice(toIdx, 0, from);
+
+            dayTasks.forEach((t, i) => { t.order = i; });
+
+            saveTasks();
+            renderActiveView();
+            if (notionConnected) pushTaskToNotion(from);
+        }
+
         function escapeHtml(s) {
             return String(s ?? '')
                 .replace(/&/g, '&amp;')
@@ -2097,38 +2362,6 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
-        }
-
-        function initPullToRefresh() {
-            const mobileView = document.querySelector('.mobile-view');
-            const indicator = document.getElementById('pullIndicator');
-            let startY = 0;
-            let pulling = false;
-
-            mobileView.addEventListener('touchstart', e => {
-                if (mobileView.scrollTop === 0) {
-                    startY = e.touches[0].clientY;
-                    pulling = true;
-                }
-            }, { passive: true });
-
-            mobileView.addEventListener('touchmove', e => {
-                if (!pulling) return;
-                const dy = e.touches[0].clientY - startY;
-                if (dy > 50) indicator.classList.add('visible');
-                else indicator.classList.remove('visible');
-            }, { passive: true });
-
-            mobileView.addEventListener('touchend', () => {
-                if (indicator.classList.contains('visible') && notionConnected) {
-                    indicator.textContent = '↻ Syncing...';
-                    syncFromNotion().finally(() => {
-                        indicator.classList.remove('visible');
-                        indicator.textContent = '↓ Release to sync Notion';
-                    });
-                }
-                pulling = false;
-            });
         }
 
         // Initialize on load
