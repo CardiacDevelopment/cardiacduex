@@ -1,19 +1,22 @@
-const { getAuthCookie } = require('../../lib/notion-cookie');
+const { getConfig, notionFetch, applyCors } = require('../_lib/notion');
 
 module.exports = async function handler(req, res) {
+  if (applyCors(req, res)) return;
+
   try {
-    const auth = getAuthCookie(req);
-
-    if (!auth || !auth.access_token) {
-      return res.status(200).json({ connected: false });
-    }
-
-    return res.status(200).json({
+    const { token, databaseId } = getConfig();
+    // Cheapest call that confirms both auth and DB access.
+    const db = await notionFetch(`/databases/${databaseId}`, { token });
+    res.status(200).json({
       connected: true,
-      workspace_name: auth.workspace_name || null,
-      workspace_id: auth.workspace_id || null
+      databaseId,
+      databaseTitle: (db.title || []).map(t => t.plain_text).join('') || 'Untitled',
     });
   } catch (err) {
-    return res.status(200).json({ connected: false, error: err.message || 'status_failed' });
+    res.status(200).json({
+      connected: false,
+      error: err.message,
+      status: err.status || 500,
+    });
   }
 };
