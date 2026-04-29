@@ -276,6 +276,123 @@
             letter-spacing: 0.5px;
         }
 
+        /* Task Board View */
+        .task-board-view {
+            display: none;
+            padding: 20px 20px 100px;
+            overflow-y: auto;
+            height: calc(100vh - 110px);
+        }
+
+        .task-board-view.active {
+            display: block;
+        }
+
+        .mobile-view.hidden,
+        .day-nav.hidden {
+            display: none;
+        }
+
+        .category-group {
+            margin-bottom: 28px;
+        }
+
+        .category-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .category-group-header .category-dot {
+            width: 10px;
+            height: 10px;
+        }
+
+        .category-group-chevron {
+            font-size: 10px;
+            color: var(--text-secondary);
+            transition: transform 0.15s ease;
+            display: inline-block;
+            width: 10px;
+        }
+
+        .category-group.collapsed .category-group-chevron {
+            transform: rotate(-90deg);
+        }
+
+        .category-group-count {
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-left: auto;
+        }
+
+        .category-group-add {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .category-group-add:active {
+            background: var(--task-bg);
+        }
+
+        .category-group-body {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .category-group.collapsed .category-group-body {
+            display: none;
+        }
+
+        .category-add-input {
+            background: var(--task-bg);
+            border: 2px solid var(--accent-green);
+            border-radius: 4px;
+            padding: 12px 14px;
+            font-size: 15px;
+            color: var(--text-primary);
+            width: 100%;
+            font-family: inherit;
+            display: none;
+        }
+
+        .category-add-input.visible {
+            display: block;
+        }
+
+        .category-add-input:focus {
+            outline: none;
+        }
+
+        .board-empty {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 60px 20px;
+            font-size: 14px;
+        }
+
         /* Add task input */
         .add-task-input {
             position: fixed;
@@ -387,6 +504,46 @@
             cursor: not-allowed;
         }
 
+        .setting-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle-switch {
+            width: 44px;
+            height: 24px;
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch.on {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: var(--text-primary);
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+        }
+
+        .toggle-switch.on::after {
+            transform: translateX(20px);
+            background: var(--bg-primary);
+        }
+
         /* Modal */
         .modal {
             position: fixed;
@@ -450,6 +607,282 @@
             color: var(--bg-primary);
             font-weight: 600;
         }
+
+        /* Edit Modal */
+        .edit-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            padding: 20px;
+        }
+
+        .edit-modal-overlay.visible {
+            display: flex;
+        }
+
+        .edit-modal {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 420px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .edit-modal-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .edit-modal input {
+            width: 100%;
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-family: inherit;
+        }
+
+        .edit-modal input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+        }
+
+        .category-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .category-chip {
+            padding: 6px 12px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid transparent;
+            opacity: 0.7;
+            transition: opacity 0.15s ease, border-color 0.15s ease;
+        }
+
+        .category-chip.selected {
+            opacity: 1;
+            border-color: var(--text-primary);
+        }
+
+        .edit-modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .edit-modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-save {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+        }
+
+        .btn-delete {
+            background: #E24B4A22;
+            color: #E24B4A;
+        }
+
+        /* Longpress Day Picker */
+        .longpress-picker-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 300;
+            padding: 0;
+        }
+
+        .longpress-picker-overlay.visible {
+            display: flex;
+        }
+
+        .longpress-picker {
+            background: var(--bg-primary);
+            border-radius: 16px 16px 0 0;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .longpress-picker-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .longpress-picker-task {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .day-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .day-chip {
+            padding: 10px 14px;
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .day-chip:active {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+        }
+
+        /* Action menu (shares overlay/sheet style with longpress picker) */
+        .action-menu-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 300;
+            padding: 0;
+        }
+
+        .action-menu-overlay.visible {
+            display: flex;
+        }
+
+        .action-menu {
+            background: var(--bg-primary);
+            border-radius: 16px 16px 0 0;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .action-menu-item {
+            background: var(--task-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: inherit;
+            text-align: left;
+        }
+
+        .action-menu-item:active {
+            background: #2a2a2a;
+        }
+
+        .action-menu-item-danger {
+            color: #E24B4A;
+            border-color: #E24B4A33;
+            background: #E24B4A11;
+        }
+
+        .action-menu-item-cancel {
+            margin-top: 8px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        /* Swipe wrappers for day-view tasks */
+        .task-item-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .task-swipe-action,
+        .task-swipe-done {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            padding: 0 18px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            pointer-events: none;
+        }
+
+        .task-swipe-action {
+            justify-content: flex-end;
+            background: #E24B4A;
+            color: white;
+        }
+
+        .task-swipe-done {
+            justify-content: flex-start;
+            background: var(--accent-green);
+            color: var(--bg-primary);
+        }
+
+        .task-item-wrapper.swiping .task-swipe-action { opacity: 1; }
+        .task-item-wrapper.swiping-right .task-swipe-done { opacity: 1; }
+
+        .task-item-wrapper .task-item {
+            position: relative;
+            z-index: 1;
+        }
+
+        .task-item-wrapper.swipe-complete .task-item {
+            transition: transform 0.25s ease, opacity 0.25s ease;
+            transform: translateX(-110%);
+            opacity: 0;
+        }
+
+        .task-item-wrapper.swipe-complete-right .task-item {
+            transition: transform 0.25s ease, opacity 0.25s ease;
+            transform: translateX(110%);
+            opacity: 0;
+        }
+
+        /* Pull-indicator color in light mode handled by var(--accent-green) */
 
         .pull-indicator {
             text-align: center;
@@ -533,7 +966,7 @@
     </div>
 
     <!-- Day Navigation (Mobile) -->
-    <div class="day-nav">
+    <div class="day-nav" id="dayNav">
         <button onclick="changeDay(-1)">←</button>
         <div style="text-align: center;">
             <div class="current-day" id="currentDay">TODAY</div>
@@ -543,11 +976,16 @@
     </div>
 
     <!-- Mobile View -->
-    <div class="mobile-view">
+    <div class="mobile-view" id="mobileView">
         <div id="pullIndicator" class="pull-indicator">↓ Release to sync Notion</div>
         <div class="day-column">
             <div class="task-list" id="mobileTaskList"></div>
         </div>
+    </div>
+
+    <!-- Task Board View -->
+    <div class="task-board-view" id="taskBoardView">
+        <div id="taskBoardContent"></div>
     </div>
 
     <!-- Bottom Navigation -->
@@ -565,6 +1003,13 @@
         <div class="settings-header">
             <div class="settings-title">Settings</div>
             <button class="close-btn" onclick="toggleSettings()">×</button>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-toggle">
+                <div class="setting-label" style="margin-bottom:0;">Light Mode</div>
+                <div class="toggle-switch" id="lightModeToggle" onclick="toggleLightMode()"></div>
+            </div>
         </div>
 
         <div class="setting-item">
@@ -588,11 +1033,47 @@
         </div>
     </div>
 
+    <!-- Edit Task Modal -->
+    <div class="edit-modal-overlay" id="editModal">
+        <div class="edit-modal">
+            <div class="edit-modal-title">Edit Task</div>
+            <input type="text" id="editTaskInput" placeholder="Task name…" />
+            <div class="edit-modal-title" style="margin-top:18px;">Category</div>
+            <div class="category-grid" id="editCategoryGrid"></div>
+            <div class="edit-modal-actions">
+                <button class="btn-delete" onclick="deleteEditingTask()">Delete</button>
+                <button class="btn-save" onclick="saveEditingTask()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Longpress Day Picker -->
+    <div class="longpress-picker-overlay" id="longpressPicker">
+        <div class="longpress-picker">
+            <div class="longpress-picker-title">Move to day</div>
+            <div class="longpress-picker-task" id="longpressTaskName"></div>
+            <div class="day-chips" id="dayChips"></div>
+        </div>
+    </div>
+
+    <!-- Long-press Action Menu -->
+    <div class="action-menu-overlay" id="actionMenu">
+        <div class="action-menu">
+            <div class="longpress-picker-title">Task</div>
+            <div class="longpress-picker-task" id="actionMenuTaskName"></div>
+            <button class="action-menu-item" data-action="reschedule">Reschedule</button>
+            <button class="action-menu-item" data-action="edit">Edit</button>
+            <button class="action-menu-item action-menu-item-danger" data-action="delete">Delete</button>
+            <button class="action-menu-item action-menu-item-cancel" data-action="cancel">Cancel</button>
+        </div>
+    </div>
+
     <script>
         // State
         let currentDayOffset = 0;
         let notionConnected = false;
         let tasks = [];
+        let collapsedCategories = new Set();
 
         const categoryColors = {
             'Brain Dump': '#888780',
@@ -609,6 +1090,9 @@
         // Initialize
         async function init() {
             loadTasks();
+            loadCollapsedCategories();
+            applyLightModePreference();
+            rolloverOverdueTasks();
             updateDateDisplay();
             renderTasks();
 
@@ -629,6 +1113,8 @@
                 setTimeout(() => addTaskInput.classList.remove('visible'), 200);
             });
 
+            initTaskBoardEvents();
+            initOverlayDismissals();
             initPullToRefresh();
         }
 
@@ -764,27 +1250,37 @@
             const dayTasks = tasks
                 .filter(t => t.dayOffset === currentDayOffset)
                 .sort((a, b) => (a.order || 0) - (b.order || 0));
-            
+
             if (dayTasks.length === 0) {
                 list.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 40px 20px; font-size: 14px;">No tasks for this day</div>';
+                if (currentView === 'tasks') renderTaskBoard();
                 return;
             }
 
             list.innerHTML = dayTasks.map(task => {
                 const categoryColor = categoryColors[task.category] || '#888780';
                 return `
-                    <div class="task-item" onclick="toggleTask(${task.id})">
-                        <div class="task-checkbox ${task.completed ? 'checked' : ''}"></div>
-                        <div class="task-text ${task.completed ? 'completed' : ''}">
-                            ${task.text}
-                            <div class="task-category">
-                                <span class="category-dot" style="background-color: ${categoryColor}"></span>
-                                ${task.category}
+                    <div class="task-item-wrapper" data-task-id="${task.id}">
+                        <div class="task-swipe-done">✓ DONE</div>
+                        <div class="task-swipe-action">← UNSCHEDULE</div>
+                        <div class="task-item">
+                            <div class="task-checkbox ${task.completed ? 'checked' : ''}"></div>
+                            <div class="task-text ${task.completed ? 'completed' : ''}">
+                                ${escapeHtml(task.text)}
+                                <div class="task-category">
+                                    <span class="category-dot" style="background-color: ${categoryColor}"></span>
+                                    ${escapeHtml(task.category)}
+                                </div>
                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
+
+            // Attach gesture listeners to each newly-rendered wrapper.
+            list.querySelectorAll('.task-item-wrapper').forEach(attachDayViewListeners);
+
+            if (currentView === 'tasks') renderTaskBoard();
         }
 
         function addTask(text) {
@@ -929,6 +1425,30 @@
             }
         }
 
+        // Archive a Notion page so it stops coming back on sync. Returns true on
+        // success, false on any failure — caller decides whether to surface the
+        // error to the user.
+        async function archiveTaskInNotion(notionId) {
+            if (!notionConnected || !notionId) return false;
+
+            try {
+                const response = await fetch('/api/notion/archive-task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ notionId }),
+                });
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    console.error('Archive failed:', err.error || response.statusText);
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Archive error:', error);
+                return false;
+            }
+        }
+
         function exportTasks() {
             const dataStr = JSON.stringify(tasks, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -939,9 +1459,644 @@
             link.click();
         }
 
+        let currentView = 'today';
+
+        function rolloverOverdueTasks() {
+            // Move incomplete tasks from past days to today. Someday (999) is left alone.
+            let changed = false;
+            for (const task of tasks) {
+                if (!task.completed && task.dayOffset != null && task.dayOffset < 0 && task.dayOffset !== 999) {
+                    task.dayOffset = 0;
+                    changed = true;
+                    // Push to Notion if connected so the rollover is reflected there too.
+                    if (notionConnected) pushTaskToNotion(task);
+                }
+            }
+            if (changed) saveTasks();
+        }
+
+        function applyLightModePreference() {
+            const isLight = localStorage.getItem('cardiacLightMode') === '1';
+            document.body.classList.toggle('light-mode', isLight);
+            const toggle = document.getElementById('lightModeToggle');
+            if (toggle) toggle.classList.toggle('on', isLight);
+        }
+
+        function toggleLightMode() {
+            const isLight = document.body.classList.toggle('light-mode');
+            localStorage.setItem('cardiacLightMode', isLight ? '1' : '0');
+            const toggle = document.getElementById('lightModeToggle');
+            if (toggle) toggle.classList.toggle('on', isLight);
+        }
+
         function switchView(view) {
-            // Placeholder for future view switching
-            console.log('Switch to:', view);
+            if (view !== 'today' && view !== 'tasks') return;
+            currentView = view;
+
+            const mobileView = document.getElementById('mobileView');
+            const dayNav = document.getElementById('dayNav');
+            const boardView = document.getElementById('taskBoardView');
+
+            const navButtons = document.querySelectorAll('.bottom-nav .nav-item');
+            navButtons.forEach(btn => {
+                const handler = btn.getAttribute('onclick') || '';
+                const isActive =
+                    (view === 'today' && handler.includes("'today'")) ||
+                    (view === 'tasks' && handler.includes("'tasks'"));
+                btn.classList.toggle('active', isActive);
+            });
+
+            if (view === 'tasks') {
+                mobileView.classList.add('hidden');
+                dayNav.classList.add('hidden');
+                boardView.classList.add('active');
+                renderTaskBoard();
+            } else {
+                mobileView.classList.remove('hidden');
+                dayNav.classList.remove('hidden');
+                boardView.classList.remove('active');
+                renderTasks();
+            }
+        }
+
+        function renderTaskBoard() {
+            const container = document.getElementById('taskBoardContent');
+
+            // The board is the "unscheduled / someday" bucket. Tasks with a real
+            // dayOffset live in the day view; the board shows what hasn't been
+            // scheduled yet. Treat null/undefined and 999 both as unscheduled.
+            const isUnscheduled = t => t.dayOffset == null || t.dayOffset === 999;
+
+            // Show every category we know about, even if empty, so users can
+            // add tasks straight into a fresh category.
+            const groups = {};
+            const knownOrder = Object.keys(categoryColors);
+            for (const cat of knownOrder) groups[cat] = [];
+            for (const task of tasks) {
+                if (task.completed) continue;
+                if (!isUnscheduled(task)) continue;
+                const cat = task.category || 'Brain Dump';
+                if (!groups[cat]) groups[cat] = [];
+                groups[cat].push(task);
+            }
+
+            const orderedCats = [
+                ...knownOrder,
+                ...Object.keys(groups).filter(c => !knownOrder.includes(c)),
+            ];
+
+            container.innerHTML = orderedCats.map(cat => {
+                const color = categoryColors[cat] || '#888780';
+                const items = groups[cat]
+                    .slice()
+                    .sort((a, b) => (a.order || 0) - (b.order || 0));
+                const collapsed = collapsedCategories.has(cat);
+                const catAttr = escapeHtml(cat);
+                const rows = items.map(task => `
+                    <div class="task-item" data-task-id="${task.id}">
+                        <div class="task-checkbox ${task.completed ? 'checked' : ''}"></div>
+                        <div class="task-text ${task.completed ? 'completed' : ''}">
+                            ${escapeHtml(task.text)}
+                        </div>
+                    </div>
+                `).join('');
+                return `
+                    <div class="category-group ${collapsed ? 'collapsed' : ''}" data-cat="${catAttr}">
+                        <div class="category-group-header" data-action="toggle-collapse">
+                            <span class="category-group-chevron">▼</span>
+                            <span class="category-dot" style="background-color: ${color}"></span>
+                            <span>${escapeHtml(cat)}</span>
+                            <span class="category-group-count">${items.length}</span>
+                            <button class="category-group-add" data-action="show-add" aria-label="Add task to ${catAttr}">+</button>
+                        </div>
+                        <div class="category-group-body">
+                            <input type="text" class="category-add-input" data-action="add-input" placeholder="Add to ${catAttr}…" />
+                            ${rows || '<div style="color: var(--text-secondary); font-size: 13px; padding: 4px 0;">No tasks</div>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Attach gesture listeners to each task on the board.
+            container.querySelectorAll('.task-item[data-task-id]').forEach(attachBoardTaskListeners);
+        }
+
+        function loadCollapsedCategories() {
+            try {
+                const saved = localStorage.getItem('cardiacCollapsedCategories');
+                if (saved) collapsedCategories = new Set(JSON.parse(saved));
+            } catch (err) {
+                console.error('Failed to load collapsed categories:', err);
+                collapsedCategories = new Set();
+            }
+        }
+
+        function saveCollapsedCategories() {
+            try {
+                localStorage.setItem(
+                    'cardiacCollapsedCategories',
+                    JSON.stringify([...collapsedCategories])
+                );
+            } catch (err) {
+                console.error('Failed to save collapsed categories:', err);
+            }
+        }
+
+        function toggleCategoryCollapse(cat) {
+            if (collapsedCategories.has(cat)) {
+                collapsedCategories.delete(cat);
+            } else {
+                collapsedCategories.add(cat);
+            }
+            saveCollapsedCategories();
+
+            // Toggle in place rather than full re-render so any in-progress
+            // text the user typed in another category's add input is preserved.
+            const group = document.querySelector(
+                `.category-group[data-cat="${cssEscape(cat)}"]`
+            );
+            if (group) group.classList.toggle('collapsed');
+        }
+
+        function showCategoryAddInput(cat) {
+            // If collapsed, expand first so the input is visible.
+            if (collapsedCategories.has(cat)) {
+                toggleCategoryCollapse(cat);
+            }
+            const group = document.querySelector(
+                `.category-group[data-cat="${cssEscape(cat)}"]`
+            );
+            if (!group) return;
+            const input = group.querySelector('.category-add-input');
+            if (!input) return;
+            input.classList.add('visible');
+            input.focus();
+        }
+
+        function addTaskToCategory(cat, text) {
+            const trimmed = String(text || '').trim();
+            if (!trimmed) return;
+            const task = {
+                id: Date.now(),
+                text: trimmed,
+                completed: false,
+                dayOffset: 999, // unscheduled — lives in Someday until scheduled
+                category: cat,
+                order: tasks.filter(t => t.dayOffset === 999).length,
+                createdAt: new Date().toISOString(),
+            };
+            tasks.push(task);
+            saveTasks();
+            renderTaskBoard();
+            if (notionConnected) pushTaskToNotion(task);
+        }
+
+        // Minimal CSS.escape polyfill — only handles the chars we care about
+        // for category names (quotes, backslashes).
+        function cssEscape(s) {
+            if (window.CSS && typeof CSS.escape === 'function') return CSS.escape(s);
+            return String(s).replace(/(["'\\])/g, '\\$1');
+        }
+
+        function initTaskBoardEvents() {
+            const board = document.getElementById('taskBoardContent');
+            if (!board) return;
+
+            board.addEventListener('click', (e) => {
+                const addBtn = e.target.closest('.category-group-add');
+                const header = e.target.closest('.category-group-header');
+
+                // Add button takes priority — it sits inside the header.
+                if (addBtn) {
+                    e.stopPropagation();
+                    const group = addBtn.closest('.category-group');
+                    if (group) showCategoryAddInput(group.dataset.cat);
+                    return;
+                }
+                if (header) {
+                    const group = header.closest('.category-group');
+                    if (group) toggleCategoryCollapse(group.dataset.cat);
+                    return;
+                }
+                // Single taps on task cards intentionally do nothing — see
+                // attachBoardTaskListeners for the full gesture set
+                // (double-tap → edit, triple-tap → today, long-press → day picker).
+            });
+
+            board.addEventListener('keypress', (e) => {
+                if (e.key !== 'Enter') return;
+                const input = e.target.closest('.category-add-input');
+                if (!input) return;
+                const group = input.closest('.category-group');
+                if (!group) return;
+                const cat = group.dataset.cat;
+                const value = input.value;
+                input.value = '';
+                input.classList.remove('visible');
+                addTaskToCategory(cat, value);
+            });
+
+            board.addEventListener('blur', (e) => {
+                const input = e.target.closest && e.target.closest('.category-add-input');
+                if (!input) return;
+                // Small delay so an Enter that fires blur first still commits.
+                setTimeout(() => input.classList.remove('visible'), 150);
+            }, true);
+        }
+
+        // ── Edit Task Modal ─────────────────────────────────────
+        let editingTaskId = null;
+
+        function openEditModal(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            editingTaskId = taskId;
+
+            document.getElementById('editTaskInput').value = task.text;
+
+            const grid = document.getElementById('editCategoryGrid');
+            grid.innerHTML = Object.entries(categoryColors).map(([name, color]) => `
+                <div class="category-chip ${task.category === name ? 'selected' : ''}"
+                     style="background: ${color}22; color: ${color};"
+                     data-category="${escapeHtml(name)}"
+                     onclick="selectEditCategory(this)">
+                    ${escapeHtml(name)}
+                </div>
+            `).join('');
+
+            document.getElementById('editModal').classList.add('visible');
+            setTimeout(() => document.getElementById('editTaskInput').focus(), 100);
+        }
+
+        function selectEditCategory(el) {
+            document.querySelectorAll('#editCategoryGrid .category-chip').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function saveEditingTask() {
+            const task = tasks.find(t => t.id === editingTaskId);
+            if (!task) { closeEditModal(); return; }
+
+            const newText = document.getElementById('editTaskInput').value.trim();
+            const selectedChip = document.querySelector('#editCategoryGrid .category-chip.selected');
+            if (newText) task.text = newText;
+            if (selectedChip) task.category = selectedChip.getAttribute('data-category');
+
+            saveTasks();
+            renderActiveView();
+            closeEditModal();
+            if (notionConnected) pushTaskToNotion(task);
+        }
+
+        function deleteEditingTask() {
+            const taskId = editingTaskId;
+            closeEditModal();
+            deleteTaskById(taskId);
+        }
+
+        // Shared delete path used by the modal and the action menu.
+        // Archives the Notion page first (if any) so it does not resurrect on the
+        // next sync, then removes the task locally and re-renders.
+        async function deleteTaskById(taskId, { confirmFirst = true } = {}) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            if (confirmFirst) {
+                const ok = window.confirm(`Delete "${task.text}"? This cannot be undone from the app.`);
+                if (!ok) return;
+            }
+
+            // Archive in Notion before removing locally so we still have the
+            // notionId. If the archive fails (offline, API error), we surface it
+            // and bail — better than a phantom local delete that resurrects.
+            if (notionConnected && task.notionId) {
+                const ok = await archiveTaskInNotion(task.notionId);
+                if (!ok) {
+                    window.alert('Could not archive in Notion. Task was not deleted.');
+                    return;
+                }
+            }
+
+            tasks = tasks.filter(t => t.id !== taskId);
+            saveTasks();
+            renderActiveView();
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('visible');
+            editingTaskId = null;
+        }
+
+        function renderActiveView() {
+            if (currentView === 'tasks') renderTaskBoard();
+            else renderTasks();
+        }
+
+        // ── Longpress Day Picker ────────────────────────────────
+        let longpressTaskId = null;
+
+        function openLongpressPicker(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            longpressTaskId = taskId;
+
+            document.getElementById('longpressTaskName').textContent = task.text;
+
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const chips = document.getElementById('dayChips');
+            chips.innerHTML = '';
+
+            // Someday chip first
+            const somedayChip = document.createElement('div');
+            somedayChip.className = 'day-chip';
+            somedayChip.textContent = 'Someday';
+            somedayChip.onclick = () => assignTaskDay(longpressTaskId, 999);
+            chips.appendChild(somedayChip);
+
+            for (let i = 0; i <= 14; i++) {
+                const d = new Date();
+                d.setDate(d.getDate() + i);
+                const label = i === 0 ? 'Today'
+                    : i === 1 ? 'Tomorrow'
+                    : `${dayNames[d.getDay()]} ${monthNames[d.getMonth()]} ${d.getDate()}`;
+                const chip = document.createElement('div');
+                chip.className = 'day-chip';
+                chip.textContent = label;
+                chip.onclick = () => assignTaskDay(longpressTaskId, i);
+                chips.appendChild(chip);
+            }
+
+            document.getElementById('longpressPicker').classList.add('visible');
+        }
+
+        function assignTaskDay(taskId, dayOffset) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) { closeLongpressPicker(); return; }
+            task.dayOffset = dayOffset;
+            task.order = tasks.filter(t => t.dayOffset === dayOffset).length;
+            saveTasks();
+            renderActiveView();
+            closeLongpressPicker();
+            if (notionConnected) pushTaskToNotion(task);
+        }
+
+        function closeLongpressPicker() {
+            document.getElementById('longpressPicker').classList.remove('visible');
+            longpressTaskId = null;
+        }
+
+        // ── Action Menu (long-press) ────────────────────────────
+        let actionMenuTaskId = null;
+
+        function openActionMenu(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            actionMenuTaskId = taskId;
+            document.getElementById('actionMenuTaskName').textContent = task.text;
+            document.getElementById('actionMenu').classList.add('visible');
+        }
+
+        function closeActionMenu() {
+            document.getElementById('actionMenu').classList.remove('visible');
+            actionMenuTaskId = null;
+        }
+
+        function handleActionMenuClick(action) {
+            const taskId = actionMenuTaskId;
+            closeActionMenu();
+            if (taskId == null) return;
+
+            if (action === 'reschedule') {
+                openLongpressPicker(taskId);
+            } else if (action === 'edit') {
+                openEditModal(taskId);
+            } else if (action === 'delete') {
+                deleteTaskById(taskId);
+            }
+            // 'cancel' or anything else: just dismiss (already done above)
+        }
+
+        function initOverlayDismissals() {
+            const editModal = document.getElementById('editModal');
+            editModal.addEventListener('click', e => {
+                if (e.target === editModal) closeEditModal();
+            });
+            const picker = document.getElementById('longpressPicker');
+            picker.addEventListener('click', e => {
+                if (e.target === picker) closeLongpressPicker();
+            });
+            const actionMenu = document.getElementById('actionMenu');
+            actionMenu.addEventListener('click', e => {
+                if (e.target === actionMenu) {
+                    closeActionMenu();
+                    return;
+                }
+                const btn = e.target.closest('.action-menu-item');
+                if (btn) handleActionMenuClick(btn.dataset.action);
+            });
+        }
+
+        // ── Board-task gesture handling ─────────────────────────
+        // Single tap = no-op (intentional, prevents fat-finger toggles).
+        // Double tap = edit modal. Triple tap = schedule to today.
+        // Long press = action menu (Reschedule / Edit / Delete).
+        function attachBoardTaskListeners(item) {
+            let tapCount = 0;
+            let tapTimer = null;
+            let longpressTimer = null;
+            let mode = null; // 'tap' | 'longpress' | 'cancelled'
+            let startX = 0, startY = 0;
+
+            item.addEventListener('touchstart', e => {
+                if (!e.touches[0]) return;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                mode = 'tap';
+                tapCount += 1;
+
+                clearTimeout(longpressTimer);
+                longpressTimer = setTimeout(() => {
+                    if (mode !== 'tap') return;
+                    mode = 'longpress';
+                    tapCount = 0;
+                    clearTimeout(tapTimer);
+                    openActionMenu(Number(item.dataset.taskId));
+                }, 600);
+
+                clearTimeout(tapTimer);
+                tapTimer = setTimeout(() => {
+                    if (mode !== 'tap') return;
+                    const count = tapCount;
+                    tapCount = 0;
+                    clearTimeout(longpressTimer);
+                    const taskId = Number(item.dataset.taskId);
+
+                    if (count === 2) {
+                        openEditModal(taskId);
+                    } else if (count >= 3) {
+                        scheduleBoardTaskToToday(taskId);
+                    }
+                    // count === 1: deliberately nothing
+                }, 350);
+            }, { passive: true });
+
+            item.addEventListener('touchmove', e => {
+                if (!e.touches[0]) return;
+                const dx = e.touches[0].clientX - startX;
+                const dy = e.touches[0].clientY - startY;
+                if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                    mode = 'cancelled';
+                    tapCount = 0;
+                    clearTimeout(tapTimer);
+                    clearTimeout(longpressTimer);
+                }
+            }, { passive: true });
+
+            // Desktop fallback: dblclick opens edit. (No single-click handler —
+            // that's the whole point of this view.)
+            item.addEventListener('dblclick', e => {
+                e.stopPropagation();
+                openEditModal(Number(item.dataset.taskId));
+            });
+        }
+
+        function scheduleBoardTaskToToday(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            task.dayOffset = 0;
+            task.order = tasks.filter(t => t.dayOffset === 0).length;
+            saveTasks();
+            renderTaskBoard();
+            if (notionConnected) pushTaskToNotion(task);
+        }
+
+        // ── Day-view gesture handling ───────────────────────────
+        function attachDayViewListeners(wrapper) {
+            const taskItem = wrapper.querySelector('.task-item');
+            if (!taskItem) return;
+
+            let startX = 0, startY = 0, currentX = 0;
+            let isHorizontal = null;
+            let longpressTimer = null;
+            let lastTapTime = 0;
+            let didSwipe = false;
+            let touchHandled = false; // Block synthetic click after touch
+
+            wrapper.addEventListener('touchstart', e => {
+                if (!e.touches[0]) return;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                currentX = 0;
+                isHorizontal = null;
+                didSwipe = false;
+                touchHandled = true;
+
+                const taskId = Number(wrapper.dataset.taskId);
+                const now = Date.now();
+
+                // Double tap → edit modal
+                if (now - lastTapTime < 350) {
+                    clearTimeout(longpressTimer);
+                    lastTapTime = 0;
+                    didSwipe = true; // suppress the deferred single-tap toggle below
+                    openEditModal(taskId);
+                    return;
+                }
+                lastTapTime = now;
+
+                // Long press → action menu (Reschedule / Edit / Delete)
+                clearTimeout(longpressTimer);
+                longpressTimer = setTimeout(() => {
+                    longpressTimer = null;
+                    didSwipe = true;
+                    openActionMenu(taskId);
+                }, 600);
+            }, { passive: true });
+
+            wrapper.addEventListener('touchmove', e => {
+                if (!e.touches[0]) return;
+                const dx = e.touches[0].clientX - startX;
+                const dy = e.touches[0].clientY - startY;
+
+                if (isHorizontal === null && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+                    isHorizontal = Math.abs(dx) > Math.abs(dy);
+                    if (!isHorizontal) {
+                        clearTimeout(longpressTimer);
+                        longpressTimer = null;
+                        return;
+                    }
+                    clearTimeout(longpressTimer);
+                    longpressTimer = null;
+                }
+                if (!isHorizontal) return;
+
+                e.preventDefault();
+                currentX = dx;
+                taskItem.style.transition = 'none';
+                taskItem.style.transform = `translateX(${currentX}px)`;
+                wrapper.classList.toggle('swiping', currentX < -20);
+                wrapper.classList.toggle('swiping-right', currentX > 20);
+            }, { passive: false });
+
+            wrapper.addEventListener('touchend', () => {
+                clearTimeout(longpressTimer);
+                longpressTimer = null;
+                const taskId = Number(wrapper.dataset.taskId);
+
+                if (isHorizontal) {
+                    didSwipe = true;
+                    if (currentX < -60) {
+                        wrapper.classList.add('swipe-complete');
+                        setTimeout(() => unscheduleTask(taskId), 250);
+                    } else if (currentX > 60) {
+                        wrapper.classList.add('swipe-complete-right');
+                        setTimeout(() => toggleTask(taskId), 250);
+                    } else {
+                        taskItem.style.transition = 'transform 0.2s ease';
+                        taskItem.style.transform = 'translateX(0)';
+                        wrapper.classList.remove('swiping', 'swiping-right');
+                    }
+                } else if (!didSwipe) {
+                    // Single tap — defer briefly so a double-tap can claim it.
+                    setTimeout(() => {
+                        if (Date.now() - lastTapTime >= 340) {
+                            toggleTask(taskId);
+                        }
+                    }, 350);
+                }
+
+                isHorizontal = null;
+                currentX = 0;
+            });
+
+            // Desktop: native click toggles, dblclick opens edit. Suppressed on touch.
+            taskItem.addEventListener('click', () => {
+                if (touchHandled) return;
+                toggleTask(Number(wrapper.dataset.taskId));
+            });
+            taskItem.addEventListener('dblclick', () => {
+                openEditModal(Number(wrapper.dataset.taskId));
+            });
+        }
+
+        function unscheduleTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            task.dayOffset = 999;
+            task.order = 0;
+            saveTasks();
+            renderActiveView();
+            if (notionConnected) pushTaskToNotion(task);
+        }
+
+        function escapeHtml(s) {
+            return String(s ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function initPullToRefresh() {
